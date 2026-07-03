@@ -1,0 +1,716 @@
+{
+  "info": {
+    "_postman_id": "22d88341-af6d-4131-b45a-5e5390dace0b",
+    "name": "Restaurant",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "11999182"
+  },
+  "item": [
+    {
+      "name": "1. User Type",
+      "item": [
+        {
+          "name": "(1) CreateUserType",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.code === 201 && (() => {",
+                  "  var userTypeId = pm.response.json().id;",
+                  "  pm.environment.set('userTypeId', userTypeId);",
+                  "})()"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user-types"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(2) GetUserType",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user-types/{{userTypeId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user-types",
+                "{{userTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(3) ListUserTypes",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user-types"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. User",
+      "item": [
+        {
+          "name": "(1) CreateUser",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.code === 201 && (() => {",
+                  "  var userId = pm.response.json().id;",
+                  "  pm.environment.set('userId', userId);",
+                  "})()"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alison Guimaraes\",\n  \"email\": \"alisonguimaraes@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(2) GetUser",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(3) UpdatePassword",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"R3st@urant\",\n  \"newPassword\": \"R3st@ur4nt\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/password",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(4) UpdateUser",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alison Guimarae\",\n  \"email\": \"alisonguimaraes@hotmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"userTypeId\": {{userTypeId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(5) AssignUserType",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/user-type/{{userTypeId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}",
+                "user-type",
+                "{{userTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(6) DeleteUser",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Restaurant",
+      "item": [
+        {
+          "name": "(1) CreateRestaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.code === 201 && (() => {",
+                  "  pm.environment.set('restaurantId', pm.response.json().id);",
+                  "})()"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casa do Chef\",\n  \"address\": \"Rua A, 123\",\n  \"cuisineType\": \"Brasileira\",\n  \"openingHours\": \"10:00-22:00\",\n  \"ownerUserId\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(2) GetRestaurant",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(3) ListRestaurants",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(4) UpdateRestaurant",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casa do Chef Atualizada\",\n  \"address\": \"Rua A, 123\",\n  \"cuisineType\": \"Brasileira\",\n  \"openingHours\": \"11:00-23:00\",\n  \"ownerUserId\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(5) DeleteRestaurant",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Menu Item",
+      "item": [
+        {
+          "name": "(1) CreateMenuItem",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.code === 201 && (() => {",
+                  "  pm.environment.set('menuItemId', pm.response.json().id);",
+                  "})()"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Picanha\",\n  \"description\": \"Picanha na brasa\",\n  \"price\": 79.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(2) GetMenuItem",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items",
+                "{{menuItemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(3) ListMenuItems",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(4) UpdateMenuItem",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Picanha Premium\",\n  \"description\": \"Picanha na brasa com acompanhamentos\",\n  \"price\": 89.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha-premium.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items",
+                "{{menuItemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(5) DeleteMenuItem",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "host": [
+                "{{localhost90}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items",
+                "{{menuItemId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
