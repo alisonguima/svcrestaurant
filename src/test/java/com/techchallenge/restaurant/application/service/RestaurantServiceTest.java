@@ -1,34 +1,42 @@
 package com.techchallenge.restaurant.application.service;
 
-import com.techchallenge.restaurant.application.domain.ApiConstants;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import com.techchallenge.restaurant.application.domain.user.User;
+import com.techchallenge.restaurant.application.exception.ApiConstants;
 import com.techchallenge.restaurant.application.exception.DefaultException;
 import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.port.output.DateTimeProviderPort;
 import com.techchallenge.restaurant.application.port.output.RestaurantPersistencePort;
+import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RestaurantServiceTest {
 
   @Mock
@@ -40,13 +48,30 @@ class RestaurantServiceTest {
   @Mock
   private DateTimeProviderPort dateTimeProviderPort;
 
+  @Mock
+  private TransactionPort transactionPort;
+
   @InjectMocks
   private RestaurantService restaurantService;
 
   private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
 
+  @BeforeEach
+  void setUp() {
+    when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
+  }
+
+  private static final UserType DONO_USER_TYPE =
+      UserType.builder().id(1L).name("Dono de Restaurante").build();
+
   private User createOwner(Long id) {
-    return User.builder().id(id).name("Chef Owner").build();
+    return User.builder().id(id).name("Chef Owner").userType(DONO_USER_TYPE).build();
+  }
+
+  private User createOwnerWithType(Long id, UserType userType) {
+    return User.builder().id(id).name("Chef Owner").userType(userType).build();
   }
 
   private Restaurant createTestRestaurant(Long id, String name, User owner) {
@@ -82,6 +107,43 @@ class RestaurantServiceTest {
     assertEquals(10L, result.getOwner().getId());
     verify(userPersistencePort).findById(10L);
     verify(restaurantPersistencePort).save(any(Restaurant.class));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenOwnerIsClientType() {
+    UserType clientType = UserType.builder().id(2L).name("Cliente").build();
+    User clientOwner = createOwnerWithType(10L, clientType);
+    when(userPersistencePort.findById(10L)).thenReturn(Optional.of(clientOwner));
+
+    DefaultException exception = assertThrows(DefaultException.class,
+        () -> restaurantService.createRestaurant(Restaurant.builder()
+            .name("Casa do Chef")
+            .address("Rua A, 123")
+            .cuisineType("Brasileira")
+            .openingHours("10:00-22:00")
+            .owner(User.builder().id(10L).build())
+            .build()));
+
+    assertEquals(ErrorCode.RESTAURANT_OWNER_UNAUTHORIZED, exception.getCode());
+    assertEquals(ApiConstants.RESTAURANT_OWNER_UNAUTHORIZED, exception.getMessage());
+  }
+
+  @Test
+  void shouldThrowExceptionWhenOwnerHasNoUserType() {
+    User ownerWithoutType = createOwnerWithType(10L, null);
+    when(userPersistencePort.findById(10L)).thenReturn(Optional.of(ownerWithoutType));
+
+    DefaultException exception = assertThrows(DefaultException.class,
+        () -> restaurantService.createRestaurant(Restaurant.builder()
+            .name("Casa do Chef")
+            .address("Rua A, 123")
+            .cuisineType("Brasileira")
+            .openingHours("10:00-22:00")
+            .owner(User.builder().id(10L).build())
+            .build()));
+
+    assertEquals(ErrorCode.RESTAURANT_OWNER_UNAUTHORIZED, exception.getCode());
+    assertEquals(ApiConstants.RESTAURANT_OWNER_UNAUTHORIZED, exception.getMessage());
   }
 
   @Test

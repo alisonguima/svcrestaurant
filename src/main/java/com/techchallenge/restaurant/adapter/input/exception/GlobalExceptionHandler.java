@@ -139,10 +139,18 @@ public class GlobalExceptionHandler {
           new ErrorSpec(HttpStatus.UNPROCESSABLE_ENTITY,
               ErrorResponseConstants.ERROR_TYPE_DUPLICATE_RESOURCE,
               ErrorResponseConstants.ERROR_TITLE_DUPLICATE_RESOURCE);
-      case USER_TYPE_IN_USE, RESTAURANT_NOT_FOUND, RESTAURANT_OWNER_NOT_FOUND, MENU_ITEM_NOT_FOUND, MENU_ITEM_RESTAURANT_NOT_FOUND ->
+      case USER_TYPE_IN_USE ->
+          new ErrorSpec(HttpStatus.CONFLICT,
+              ErrorResponseConstants.ERROR_TYPE_CONFLICT,
+              ErrorResponseConstants.ERROR_TITLE_CONFLICT);
+      case RESTAURANT_NOT_FOUND, RESTAURANT_OWNER_NOT_FOUND, MENU_ITEM_NOT_FOUND, MENU_ITEM_RESTAURANT_NOT_FOUND ->
           new ErrorSpec(HttpStatus.NOT_FOUND,
               ErrorResponseConstants.ERROR_TYPE_RESOURCE_NOT_FOUND,
               ErrorResponseConstants.ERROR_TITLE_RESOURCE_NOT_FOUND);
+      case RESTAURANT_OWNER_UNAUTHORIZED ->
+          new ErrorSpec(HttpStatus.FORBIDDEN,
+              ErrorResponseConstants.ERROR_TYPE_FORBIDDEN,
+              ErrorResponseConstants.ERROR_TITLE_FORBIDDEN);
     };
   }
 
@@ -152,7 +160,7 @@ public class GlobalExceptionHandler {
     if (cause instanceof InvalidFormatException invalidFormatException) {
       String fieldName = resolveFieldName(invalidFormatException);
 
-      if ("userTypeId".equals(fieldName)) {
+      if (ErrorResponseConstants.FIELD_USER_TYPE_ID.equals(fieldName)) {
         return "Invalid userTypeId value";
       }
 

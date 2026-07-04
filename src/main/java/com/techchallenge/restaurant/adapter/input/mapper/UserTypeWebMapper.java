@@ -4,7 +4,7 @@ import com.techchallenge.restaurant.adapter.input.request.usertype.CreateUserTyp
 import com.techchallenge.restaurant.adapter.input.request.usertype.UpdateUserTypeRequest;
 import com.techchallenge.restaurant.adapter.input.response.usertype.CreateUserTypeResponse;
 import com.techchallenge.restaurant.adapter.input.response.usertype.GetUserTypeResponse;
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;

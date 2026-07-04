@@ -1,12 +1,8 @@
 package com.techchallenge.restaurant.adapter.output.postgres.persistence;
 
 import com.techchallenge.restaurant.adapter.output.postgres.mapper.RestaurantPersistenceMapper;
-import com.techchallenge.restaurant.adapter.output.postgres.model.RestaurantEntity;
 import com.techchallenge.restaurant.adapter.output.postgres.persistence.repository.RestaurantRepository;
-import com.techchallenge.restaurant.application.domain.ApiConstants;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.port.output.RestaurantPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,8 +18,8 @@ public class RestaurantPostgres implements RestaurantPersistencePort {
 
   @Override
   public Restaurant save(Restaurant restaurant) {
-    RestaurantEntity saved = restaurantRepository.save(RestaurantPersistenceMapper.INSTANCE.toEntity(restaurant));
-    return RestaurantPersistenceMapper.INSTANCE.toDomain(saved);
+    return RestaurantPersistenceMapper.INSTANCE.toDomain(
+        restaurantRepository.save(RestaurantPersistenceMapper.INSTANCE.toEntity(restaurant)));
   }
 
   @Override
@@ -33,14 +29,18 @@ public class RestaurantPostgres implements RestaurantPersistencePort {
 
   @Override
   public List<Restaurant> findAll() {
-    return restaurantRepository.findAll().stream().map(RestaurantPersistenceMapper.INSTANCE::toDomain).toList();
+    return restaurantRepository.findAll().stream()
+        .map(RestaurantPersistenceMapper.INSTANCE::toDomain)
+        .toList();
+  }
+
+  @Override
+  public boolean existsByNameIgnoreCase(String name) {
+    return restaurantRepository.existsByNameIgnoreCase(name);
   }
 
   @Override
   public void deleteById(Long id) {
-    restaurantRepository.findById(id)
-        .ifPresentOrElse(restaurantRepository::delete, () -> {
-          throw new DefaultException(ErrorCode.RESTAURANT_NOT_FOUND, ApiConstants.RESTAURANT_NOT_FOUND_WITH_ID + id);
-        });
+    restaurantRepository.deleteById(id);
   }
 }

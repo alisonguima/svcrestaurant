@@ -1,7 +1,7 @@
 package com.techchallenge.restaurant.adapter.output.postgres.mapper;
 
 import com.techchallenge.restaurant.adapter.output.postgres.model.UserTypeEntity;
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 

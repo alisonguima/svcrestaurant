@@ -10,5 +10,6 @@ public interface RestaurantPersistencePort {
   Restaurant save(Restaurant restaurant);
   Optional<Restaurant> findById(Long id);
   List<Restaurant> findAll();
+  boolean existsByNameIgnoreCase(String name);
   void deleteById(Long id);
 }

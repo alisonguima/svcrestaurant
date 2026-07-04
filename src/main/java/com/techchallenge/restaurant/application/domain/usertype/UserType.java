@@ -1,4 +1,4 @@
-package com.techchallenge.restaurant.application.domain.enums;
+package com.techchallenge.restaurant.application.domain.usertype;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

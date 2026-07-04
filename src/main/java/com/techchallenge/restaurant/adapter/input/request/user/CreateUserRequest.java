@@ -1,30 +1,44 @@
 package com.techchallenge.restaurant.adapter.input.request.user;
 
-import com.techchallenge.restaurant.application.domain.ApiConstants;
+import com.techchallenge.restaurant.adapter.input.validation.InputValidationConstants;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Dados necessários para o cadastro de um novo usuário.
+ * {@code login} e {@code email} devem ser únicos no sistema.
+ *
+ * @param name       nome completo do usuário
+ * @param email      e-mail único do usuário
+ * @param login      login único usado para autenticação
+ * @param password   senha em texto plano, armazenada com hash BCrypt
+ * @param userTypeId id do tipo de usuário a ser associado (opcional)
+ */
 public record CreateUserRequest(
-    @NotBlank(message = ApiConstants.NAME_REQUIRED)
-    @Size(min = 2, max = 100, message = ApiConstants.NAME_SIZE)
+    @Schema(description = "Nome completo do usuário", example = "João da Silva")
+    @NotBlank(message = InputValidationConstants.NAME_REQUIRED)
+    @Size(min = 2, max = 100, message = InputValidationConstants.NAME_SIZE)
     String name,
 
-    @NotBlank(message = ApiConstants.EMAIL_REQUIRED)
-    @Email(message = ApiConstants.EMAIL_INVALID)
+    @Schema(description = "E-mail único do usuário", example = "joao.silva@email.com")
+    @NotBlank(message = InputValidationConstants.EMAIL_REQUIRED)
+    @Email(message = InputValidationConstants.EMAIL_INVALID)
     String email,
 
-    @NotBlank(message = ApiConstants.LOGIN_REQUIRED)
-    @Size(min = 3, max = 50, message = ApiConstants.LOGIN_SIZE)
+    @Schema(description = "Login único usado para autenticação", example = "joaosilva")
+    @NotBlank(message = InputValidationConstants.LOGIN_REQUIRED)
+    @Size(min = 3, max = 50, message = InputValidationConstants.LOGIN_SIZE)
     String login,
 
-    @NotBlank(message = ApiConstants.PASSWORD_REQUIRED)
+    @Schema(description = "Senha do usuário em texto plano (armazenada com hash BCrypt)")
+    @NotBlank(message = InputValidationConstants.PASSWORD_REQUIRED)
     @Pattern(
-        regexp = ApiConstants.PASSWORD_PATTERN,
-        message = ApiConstants.PASSWORD_INVALID)
+        regexp = InputValidationConstants.PASSWORD_PATTERN,
+        message = InputValidationConstants.PASSWORD_INVALID)
     String password,
 
-    @NotNull(message = ApiConstants.USER_TYPE_REQUIRED)
+    @Schema(description = "Id do tipo de usuário a ser associado")
     Long userTypeId) {}

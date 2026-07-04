@@ -1,33 +1,40 @@
 package com.techchallenge.restaurant.application.service;
 
-import com.techchallenge.restaurant.application.domain.ApiConstants;
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.user.User;
+import com.techchallenge.restaurant.application.exception.ApiConstants;
 import com.techchallenge.restaurant.application.exception.DefaultException;
 import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.port.output.DateTimeProviderPort;
 import com.techchallenge.restaurant.application.port.output.PasswordEncryptionPort;
+import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
 import com.techchallenge.restaurant.application.port.output.UserTypePersistencePort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UserServiceTest {
 
   @Mock
@@ -42,10 +49,20 @@ class UserServiceTest {
   @Mock
   private UserTypePersistencePort userTypePersistencePort;
 
+  @Mock
+  private TransactionPort transactionPort;
+
   @InjectMocks
   private UserService userService;
 
   private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
+
+  @BeforeEach
+  void setUp() {
+    when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
+  }
 
   private UserType createUserType(Long id, String name) {
     return UserType.builder().id(id).name(name).build();

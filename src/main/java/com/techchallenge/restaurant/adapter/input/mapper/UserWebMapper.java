@@ -6,7 +6,7 @@ import com.techchallenge.restaurant.adapter.input.response.user.CreateUserRespon
 import com.techchallenge.restaurant.adapter.input.response.user.GetUserResponse;
 import com.techchallenge.restaurant.adapter.input.response.usertype.UserTypeResponse;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;

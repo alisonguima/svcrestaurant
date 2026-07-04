@@ -1,28 +1,36 @@
 package com.techchallenge.restaurant.application.service;
 
-import com.techchallenge.restaurant.application.domain.ApiConstants;
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
+import com.techchallenge.restaurant.application.exception.ApiConstants;
 import com.techchallenge.restaurant.application.exception.DefaultException;
 import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
 import com.techchallenge.restaurant.application.port.output.UserTypePersistencePort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UserTypeServiceTest {
 
   @Mock
@@ -31,8 +39,18 @@ class UserTypeServiceTest {
   @Mock
   private UserPersistencePort userPersistencePort;
 
+  @Mock
+  private TransactionPort transactionPort;
+
   @InjectMocks
   private UserTypeService userTypeService;
+
+  @BeforeEach
+  void setUp() {
+    when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+    doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
+  }
 
   @Test
   void shouldCreateUserTypeWithClienteNameSuccessfully() {
@@ -220,16 +238,21 @@ class UserTypeServiceTest {
 
   @Test
   void shouldDeleteUserTypeSuccessfully() {
+    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(0L);
 
     userTypeService.deleteUserType(1L);
 
+    verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);
     verify(userTypePersistencePort).deleteById(1L);
   }
 
   @Test
   void shouldThrowExceptionWhenDeletingUserTypeInUse() {
+    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(5L);
 
     DefaultException exception = assertThrows(DefaultException.class,
@@ -237,6 +260,7 @@ class UserTypeServiceTest {
 
     assertEquals(ErrorCode.USER_TYPE_IN_USE, exception.getCode());
     assertEquals(ApiConstants.USER_TYPE_IN_USE, exception.getMessage());
+    verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);
   }
 
@@ -268,10 +292,13 @@ class UserTypeServiceTest {
 
   @Test
   void shouldReturnFalseWhenUserTypeIsNotInUse() {
+    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(0L);
 
     userTypeService.deleteUserType(1L);
 
+    verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);
   }
 }

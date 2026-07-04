@@ -2,10 +2,7 @@ package com.techchallenge.restaurant.adapter.output.postgres.persistence;
 
 import com.techchallenge.restaurant.adapter.output.postgres.mapper.UserPersistenceMapper;
 import com.techchallenge.restaurant.adapter.output.postgres.persistence.repository.UserRepository;
-import com.techchallenge.restaurant.application.domain.ApiConstants;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,10 +46,6 @@ public class UserPostgres implements UserPersistencePort {
 
   @Override
   public void deleteById(Long id) {
-    userRepository.findById(id)
-        .ifPresentOrElse(
-            user -> userRepository.deleteById(id), () -> {
-              throw new DefaultException(ErrorCode.USER_NOT_FOUND, ApiConstants.USER_NOT_FOUND_WITH_ID + id);
-            });
+    userRepository.deleteById(id);
   }
 }

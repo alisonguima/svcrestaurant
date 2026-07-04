@@ -43,8 +43,8 @@ public class UserEntity {
   @Column(nullable = false)
   private String password;
 
-  @ManyToOne(optional = false)
-  @JoinColumn(name = "user_type_id", nullable = false)
+  @ManyToOne(optional = true)
+  @JoinColumn(name = "user_type_id", nullable = true)
   private UserTypeEntity userType;
 
   @Column(nullable = false)

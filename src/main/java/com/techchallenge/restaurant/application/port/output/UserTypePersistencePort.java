@@ -1,6 +1,6 @@
 package com.techchallenge.restaurant.application.port.output;
 
-import com.techchallenge.restaurant.application.domain.enums.UserType;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 
 import java.util.List;
 import java.util.Optional;

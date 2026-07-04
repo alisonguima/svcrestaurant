@@ -2,10 +2,7 @@ package com.techchallenge.restaurant.adapter.output.postgres.persistence;
 
 import com.techchallenge.restaurant.adapter.output.postgres.mapper.MenuItemPersistenceMapper;
 import com.techchallenge.restaurant.adapter.output.postgres.persistence.repository.MenuItemRepository;
-import com.techchallenge.restaurant.application.domain.ApiConstants;
 import com.techchallenge.restaurant.application.domain.menu.MenuItem;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.port.output.MenuItemPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -38,10 +35,12 @@ public class MenuItemPostgres implements MenuItemPersistencePort {
   }
 
   @Override
+  public boolean existsByNameIgnoreCaseAndRestaurantId(String name, Long restaurantId) {
+    return menuItemRepository.existsByNameIgnoreCaseAndRestaurantId(name, restaurantId);
+  }
+
+  @Override
   public void deleteById(Long id) {
-    menuItemRepository.findById(id)
-        .ifPresentOrElse(menuItemRepository::delete, () -> {
-          throw new DefaultException(ErrorCode.MENU_ITEM_NOT_FOUND, ApiConstants.MENU_ITEM_NOT_FOUND_WITH_ID + id);
-        });
+    menuItemRepository.deleteById(id);
   }
 }

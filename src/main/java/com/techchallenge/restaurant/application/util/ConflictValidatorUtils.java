@@ -2,12 +2,14 @@ package com.techchallenge.restaurant.application.util;
 
 import com.techchallenge.restaurant.application.exception.ErrorCode;
 import com.techchallenge.restaurant.application.exception.DefaultException;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-@Slf4j
 public final class ConflictValidatorUtils {
+
+  private static final Logger log = LoggerFactory.getLogger(ConflictValidatorUtils.class);
 
   private ConflictValidatorUtils() {}
 
