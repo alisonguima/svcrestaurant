@@ -9,16 +9,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-/**
- * Dados necessários para o cadastro de um novo item de cardápio,
- * sempre vinculado a um restaurante existente.
- *
- * @param name             nome do item (único dentro do restaurante)
- * @param description      descrição do item
- * @param price            preço do item, mínimo de 0.01
- * @param onlyAtRestaurant se o item só pode ser consumido no local
- * @param photoPath        caminho/URL da foto do item
- */
 public record CreateMenuItemRequest(
     @Schema(description = "Nome do item de cardápio", example = "Risoto de Camarão")
     @NotBlank(message = InputValidationConstants.MENU_ITEM_NAME_REQUIRED)
@@ -41,4 +31,8 @@ public record CreateMenuItemRequest(
     @Schema(description = "Caminho ou URL da foto do item")
     @NotBlank(message = InputValidationConstants.MENU_ITEM_PHOTO_PATH_REQUIRED)
     @Size(max = 255)
-    String photoPath) {}
+    String photoPath,
+
+    @Schema(description = "Id do dono do restaurante (deve ser o proprietário)")
+    @NotNull(message = InputValidationConstants.MENU_ITEM_OWNER_REQUIRED)
+    Long ownerId) {}

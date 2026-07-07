@@ -2,18 +2,23 @@ package com.techchallenge.restaurant.application.service;
 
 import com.techchallenge.restaurant.application.domain.menu.MenuItem;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
-import com.techchallenge.restaurant.application.exception.ApiConstants;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.domain.user.User;
+import com.techchallenge.restaurant.application.exception.MenuItemNotFoundException;
+import com.techchallenge.restaurant.application.exception.MenuItemOwnerUnauthorizedException;
+import com.techchallenge.restaurant.application.exception.MenuItemRestaurantNotFoundException;
 import com.techchallenge.restaurant.application.port.output.DateTimeProviderPort;
 import com.techchallenge.restaurant.application.port.output.MenuItemPersistencePort;
 import com.techchallenge.restaurant.application.port.output.RestaurantPersistencePort;
 import com.techchallenge.restaurant.application.port.output.TransactionPort;
+import com.techchallenge.restaurant.application.usecase.menuitem.CreateMenuItemUseCase;
+import com.techchallenge.restaurant.application.usecase.menuitem.DeleteMenuItemUseCase;
+import com.techchallenge.restaurant.application.usecase.menuitem.GetMenuItemUseCase;
+import com.techchallenge.restaurant.application.usecase.menuitem.GetMenuItemsByRestaurantUseCase;
+import com.techchallenge.restaurant.application.usecase.menuitem.UpdateMenuItemUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -51,17 +56,31 @@ class MenuItemServiceTest {
   @Mock
   private TransactionPort transactionPort;
 
-  @InjectMocks
-  private MenuItemService menuItemService;
+  private CreateMenuItemUseCase createMenuItemUseCase;
+  private UpdateMenuItemUseCase updateMenuItemUseCase;
+  private GetMenuItemUseCase getMenuItemUseCase;
+  private GetMenuItemsByRestaurantUseCase getMenuItemsByRestaurantUseCase;
+  private DeleteMenuItemUseCase deleteMenuItemUseCase;
+
+  private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
+  private static final Long OWNER_ID = 1L;
+  private static final User OWNER = User.builder().id(OWNER_ID).name("Owner").build();
 
   @BeforeEach
   void setUp() {
+    createMenuItemUseCase = new CreateMenuItemUseCase(menuItemPersistencePort,
+        restaurantPersistencePort, dateTimeProviderPort, transactionPort);
+    updateMenuItemUseCase = new UpdateMenuItemUseCase(menuItemPersistencePort,
+        dateTimeProviderPort, transactionPort);
+    getMenuItemUseCase = new GetMenuItemUseCase(menuItemPersistencePort, transactionPort);
+    getMenuItemsByRestaurantUseCase = new GetMenuItemsByRestaurantUseCase(menuItemPersistencePort,
+        restaurantPersistencePort, transactionPort);
+    deleteMenuItemUseCase = new DeleteMenuItemUseCase(menuItemPersistencePort, transactionPort);
+
     when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
   }
-
-  private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
 
   private Restaurant createTestRestaurant(Long id) {
     return Restaurant.builder()
@@ -70,6 +89,7 @@ class MenuItemServiceTest {
         .address("Rua A, 123")
         .cuisineType("Brasileira")
         .openingHours("10:00-22:00")
+        .owner(OWNER)
         .lastUpdateAt(NOW)
         .build();
   }
@@ -82,7 +102,7 @@ class MenuItemServiceTest {
         .price(BigDecimal.valueOf(79.9))
         .onlyAtRestaurant(true)
         .photoPath("/tmp/prato.jpg")
-        .restaurant(Restaurant.builder().id(restaurantId).build())
+        .restaurant(createTestRestaurant(restaurantId))
         .lastUpdateAt(NOW)
         .build();
   }
@@ -93,7 +113,7 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
     when(menuItemPersistencePort.save(any(MenuItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    MenuItem result = menuItemService.createMenuItem(5L, MenuItem.builder()
+    MenuItem result = createMenuItemUseCase.execute(5L, OWNER_ID, MenuItem.builder()
         .name("Picanha")
         .description("Picanha na brasa")
         .price(BigDecimal.valueOf(79.9))
@@ -113,20 +133,28 @@ class MenuItemServiceTest {
   void shouldThrowExceptionWhenCreatingMenuItemWithNonExistentRestaurant() {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.createMenuItem(999L, MenuItem.builder()
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> createMenuItemUseCase.execute(999L, OWNER_ID, MenuItem.builder()
             .name("Picanha")
             .description("Picanha na brasa")
             .price(BigDecimal.valueOf(79.9))
             .build()));
+  }
 
-    assertEquals(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getCode());
-    assertEquals(ApiConstants.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getMessage());
+  @Test
+  void shouldThrowExceptionWhenCreatingMenuItemByUnauthorizedOwner() {
+    when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
+
+    assertThrows(MenuItemOwnerUnauthorizedException.class,
+        () -> createMenuItemUseCase.execute(5L, 999L, MenuItem.builder()
+            .name("Picanha")
+            .description("Picanha na brasa")
+            .price(BigDecimal.valueOf(79.9))
+            .build()));
   }
 
   @Test
   void shouldUpdateMenuItemSuccessfully() {
-    Restaurant restaurant = createTestRestaurant(5L);
     MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
     MenuItem updateData = MenuItem.builder()
         .name("Picanha Premium")
@@ -141,7 +169,7 @@ class MenuItemServiceTest {
     when(menuItemPersistencePort.save(any(MenuItem.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    MenuItem result = menuItemService.updateMenuItem(5L, 1L, updateData);
+    MenuItem result = updateMenuItemUseCase.execute(5L, 1L, OWNER_ID, updateData);
 
     assertEquals("Picanha Premium", result.getName());
     assertEquals("Picanha premium na brasa", result.getDescription());
@@ -153,7 +181,6 @@ class MenuItemServiceTest {
 
   @Test
   void shouldUpdateMenuItemWithPartialData() {
-    Restaurant restaurant = createTestRestaurant(5L);
     MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
     MenuItem updateData = MenuItem.builder()
         .name("Picanha Atualizada")
@@ -164,7 +191,7 @@ class MenuItemServiceTest {
     when(menuItemPersistencePort.save(any(MenuItem.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    MenuItem result = menuItemService.updateMenuItem(5L, 1L, updateData);
+    updateMenuItemUseCase.execute(5L, 1L, OWNER_ID, updateData);
 
     ArgumentCaptor<MenuItem> captor = ArgumentCaptor.forClass(MenuItem.class);
     verify(menuItemPersistencePort).save(captor.capture());
@@ -175,11 +202,21 @@ class MenuItemServiceTest {
   }
 
   @Test
+  void shouldThrowExceptionWhenUpdatingMenuItemByUnauthorizedOwner() {
+    MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
+
+    when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(existingMenuItem));
+
+    assertThrows(MenuItemOwnerUnauthorizedException.class,
+        () -> updateMenuItemUseCase.execute(5L, 1L, 999L, MenuItem.builder().name("x").build()));
+  }
+
+  @Test
   void shouldGetMenuItemSuccessfully() {
     MenuItem menuItem = createTestMenuItem(1L, 5L, "Picanha");
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
-    MenuItem result = menuItemService.getMenuItem(5L, 1L);
+    MenuItem result = getMenuItemUseCase.execute(5L, 1L);
 
     assertNotNull(result);
     assertEquals(1L, result.getId());
@@ -192,11 +229,10 @@ class MenuItemServiceTest {
   void shouldThrowExceptionWhenGettingNonExistentMenuItem() {
     when(menuItemPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.getMenuItem(5L, 999L));
+    MenuItemNotFoundException ex = assertThrows(MenuItemNotFoundException.class,
+        () -> getMenuItemUseCase.execute(5L, 999L));
 
-    assertEquals(ErrorCode.MENU_ITEM_NOT_FOUND, exception.getCode());
-    assertTrue(exception.getMessage().contains("999"));
+    assertTrue(ex.getMessage().contains("999"));
   }
 
   @Test
@@ -204,11 +240,8 @@ class MenuItemServiceTest {
     MenuItem menuItem = createTestMenuItem(1L, 5L, "Picanha");
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.getMenuItem(10L, 1L));
-
-    assertEquals(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getCode());
-    assertEquals(ApiConstants.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getMessage());
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> getMenuItemUseCase.execute(10L, 1L));
   }
 
   @Test
@@ -220,10 +253,8 @@ class MenuItemServiceTest {
         .build();
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.getMenuItem(5L, 1L));
-
-    assertEquals(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getCode());
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> getMenuItemUseCase.execute(5L, 1L));
   }
 
   @Test
@@ -235,7 +266,7 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
     when(menuItemPersistencePort.findByRestaurantId(5L)).thenReturn(menuItems);
 
-    List<MenuItem> result = menuItemService.getMenuItemsByRestaurant(5L);
+    List<MenuItem> result = getMenuItemsByRestaurantUseCase.execute(5L);
 
     assertEquals(2, result.size());
     assertEquals(menuItem1, result.get(0));
@@ -249,7 +280,7 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
     when(menuItemPersistencePort.findByRestaurantId(5L)).thenReturn(List.of());
 
-    List<MenuItem> result = menuItemService.getMenuItemsByRestaurant(5L);
+    List<MenuItem> result = getMenuItemsByRestaurantUseCase.execute(5L);
 
     assertTrue(result.isEmpty());
     verify(restaurantPersistencePort).findById(5L);
@@ -259,10 +290,8 @@ class MenuItemServiceTest {
   void shouldThrowExceptionWhenGettingMenuItemsByNonExistentRestaurant() {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.getMenuItemsByRestaurant(999L));
-
-    assertEquals(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getCode());
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> getMenuItemsByRestaurantUseCase.execute(999L));
   }
 
   @Test
@@ -270,7 +299,7 @@ class MenuItemServiceTest {
     MenuItem menuItem = createTestMenuItem(1L, 5L, "Picanha");
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
-    menuItemService.deleteMenuItem(5L, 1L);
+    deleteMenuItemUseCase.execute(5L, 1L, OWNER_ID);
 
     verify(menuItemPersistencePort).findById(1L);
     verify(menuItemPersistencePort).deleteById(1L);
@@ -280,10 +309,8 @@ class MenuItemServiceTest {
   void shouldThrowExceptionWhenDeletingNonExistentMenuItem() {
     when(menuItemPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.deleteMenuItem(5L, 999L));
-
-    assertEquals(ErrorCode.MENU_ITEM_NOT_FOUND, exception.getCode());
+    assertThrows(MenuItemNotFoundException.class,
+        () -> deleteMenuItemUseCase.execute(5L, 999L, OWNER_ID));
   }
 
   @Test
@@ -291,9 +318,16 @@ class MenuItemServiceTest {
     MenuItem menuItem = createTestMenuItem(1L, 5L, "Picanha");
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> menuItemService.deleteMenuItem(10L, 1L));
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> deleteMenuItemUseCase.execute(10L, 1L, OWNER_ID));
+  }
 
-    assertEquals(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, exception.getCode());
+  @Test
+  void shouldThrowExceptionWhenDeletingMenuItemByUnauthorizedOwner() {
+    MenuItem menuItem = createTestMenuItem(1L, 5L, "Picanha");
+    when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
+
+    assertThrows(MenuItemOwnerUnauthorizedException.class,
+        () -> deleteMenuItemUseCase.execute(5L, 1L, 999L));
   }
 }

@@ -2,7 +2,11 @@ package com.techchallenge.restaurant.adapter.input.controller;
 
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.port.input.RestaurantUseCase;
+import com.techchallenge.restaurant.application.port.input.restaurant.CreateRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.DeleteRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.GetRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.GetRestaurantsPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.UpdateRestaurantPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,7 +37,19 @@ class RestaurantControllerTest {
   private MockMvc mockMvc;
 
   @MockBean
-  private RestaurantUseCase restaurantUseCase;
+  private CreateRestaurantPort createRestaurantUseCase;
+
+  @MockBean
+  private UpdateRestaurantPort updateRestaurantUseCase;
+
+  @MockBean
+  private GetRestaurantPort getRestaurantUseCase;
+
+  @MockBean
+  private GetRestaurantsPort getRestaurantsUseCase;
+
+  @MockBean
+  private DeleteRestaurantPort deleteRestaurantUseCase;
 
   private Restaurant restaurantDomain() {
     return Restaurant.builder()
@@ -49,7 +65,7 @@ class RestaurantControllerTest {
 
   @Test
   void create_shouldReturn201WithBody() throws Exception {
-    when(restaurantUseCase.createRestaurant(any(Restaurant.class))).thenReturn(restaurantDomain());
+    when(createRestaurantUseCase.execute(any(Restaurant.class))).thenReturn(restaurantDomain());
 
     mockMvc.perform(post("/api/v1/restaurants")
             .contentType(MediaType.APPLICATION_JSON)
@@ -63,7 +79,7 @@ class RestaurantControllerTest {
 
   @Test
   void get_shouldReturn200WithBody() throws Exception {
-    when(restaurantUseCase.getRestaurant(7L)).thenReturn(restaurantDomain());
+    when(getRestaurantUseCase.execute(7L)).thenReturn(restaurantDomain());
 
     mockMvc.perform(get("/api/v1/restaurants/7"))
         .andExpect(status().isOk())
@@ -74,7 +90,7 @@ class RestaurantControllerTest {
 
   @Test
   void getAll_shouldReturn200WithList() throws Exception {
-    when(restaurantUseCase.getRestaurants()).thenReturn(List.of(restaurantDomain()));
+    when(getRestaurantsUseCase.execute()).thenReturn(List.of(restaurantDomain()));
 
     mockMvc.perform(get("/api/v1/restaurants"))
         .andExpect(status().isOk())
@@ -85,7 +101,7 @@ class RestaurantControllerTest {
 
   @Test
   void update_shouldReturn200WithBody() throws Exception {
-    when(restaurantUseCase.updateRestaurant(anyLong(), any(Restaurant.class))).thenReturn(restaurantDomain());
+    when(updateRestaurantUseCase.execute(anyLong(), any(Restaurant.class))).thenReturn(restaurantDomain());
 
     mockMvc.perform(patch("/api/v1/restaurants/7")
             .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +113,7 @@ class RestaurantControllerTest {
 
   @Test
   void delete_shouldReturn204() throws Exception {
-    doNothing().when(restaurantUseCase).deleteRestaurant(anyLong());
+    doNothing().when(deleteRestaurantUseCase).execute(anyLong());
 
     mockMvc.perform(delete("/api/v1/restaurants/7"))
         .andExpect(status().isNoContent());

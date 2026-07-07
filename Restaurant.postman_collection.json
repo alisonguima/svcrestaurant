@@ -41,7 +41,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cliente\"\n}",
+              "raw": "{\n  \"name\": \"Dono\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -556,7 +556,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Picanha\",\n  \"description\": \"Picanha na brasa\",\n  \"price\": 79.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha.jpg\"\n}",
+              "raw": "{\n  \"name\": \"Picanha\",\n  \"description\": \"Picanha na brasa\",\n  \"price\": 79.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha.jpg\",\n  \"ownerId\": {{userId}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -659,7 +659,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Picanha Premium\",\n  \"description\": \"Picanha na brasa com acompanhamentos\",\n  \"price\": 89.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha-premium.jpg\"\n}",
+              "raw": "{\n  \"name\": \"Picanha Premium\",\n  \"description\": \"Picanha na brasa com acompanhamentos\",\n  \"price\": 89.9,\n  \"onlyAtRestaurant\": true,\n  \"photoPath\": \"/tmp/picanha-premium.jpg\",\n  \"ownerId\": {{userId}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -693,7 +693,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId={{userId}}",
               "host": [
                 "{{localhost90}}"
               ],
@@ -705,10 +705,423 @@
                 "{{restaurantId}}",
                 "menu-items",
                 "{{menuItemId}}"
+              ],
+              "query": [
+                {
+                  "key": "ownerId",
+                  "value": "{{userId}}"
+                }
               ]
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Error Scenarios",
+      "item": [
+        {
+          "name": "Setup",
+          "item": [
+            {
+              "name": "(S1) CreateUserType - Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.response.code === 201 && (() => {",
+                      "  pm.environment.set('clienteUserTypeId', pm.response.json().id);",
+                      "})()"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Cliente\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user-types"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "(S2) CreateUser - Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.response.code === 201 && (() => {",
+                      "  pm.environment.set('clienteUserId', pm.response.json().id);",
+                      "})()"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Maria Cliente\",\n  \"email\": \"maria.cliente@gmail.com\",\n  \"login\": \"mariacliente\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{clienteUserTypeId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "UserType",
+          "item": [
+            {
+              "name": "CreateUserType - nome inválido (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gerente\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user-types"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateUserType - nome duplicado (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Dono\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user-types"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetUserType - não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user-types/99999",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user-types", "99999"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DeleteUserType - em uso (409)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user-types/{{userTypeId}}",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user-types", "{{userTypeId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "User",
+          "item": [
+            {
+              "name": "CreateUser - senha fraca (400)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Teste\",\n  \"email\": \"teste@gmail.com\",\n  \"login\": \"testelogin\",\n  \"password\": \"fraca\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateUser - login duplicado (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"outro@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateUser - email duplicado (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"alisonguimaraes@hotmail.com\",\n  \"login\": \"outrologin\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "UpdatePassword - senha atual incorreta (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"SenhaErrada1!\",\n  \"newPassword\": \"R3st@urant\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/password",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user", "{{userId}}", "password"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetUser - não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/user/99999",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "user", "99999"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Restaurant",
+          "item": [
+            {
+              "name": "CreateRestaurant - dono não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Restaurante Fantasma\",\n  \"address\": \"Rua B, 999\",\n  \"cuisineType\": \"Italiana\",\n  \"openingHours\": \"12:00-22:00\",\n  \"ownerUserId\": 99999\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateRestaurant - dono não autorizado / Cliente (403)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Restaurante da Maria\",\n  \"address\": \"Rua C, 10\",\n  \"cuisineType\": \"Francesa\",\n  \"openingHours\": \"12:00-22:00\",\n  \"ownerUserId\": {{clienteUserId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateRestaurant - nome duplicado (422)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Casa do Chef\",\n  \"address\": \"Rua D, 200\",\n  \"cuisineType\": \"Brasileira\",\n  \"openingHours\": \"10:00-22:00\",\n  \"ownerUserId\": {{userId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetRestaurant - não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/99999",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "99999"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "MenuItem",
+          "item": [
+            {
+              "name": "CreateMenuItem - preço inválido (400)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Item Grátis\",\n  \"description\": \"Preço abaixo do mínimo\",\n  \"price\": 0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": {{userId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateMenuItem - restaurante não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Prato Perdido\",\n  \"description\": \"Restaurante inexistente\",\n  \"price\": 20.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": {{userId}}\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/99999/menu-items",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "99999", "menu-items"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateMenuItem - dono não autorizado (403)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Prato Não Autorizado\",\n  \"description\": \"ownerId não corresponde ao dono do restaurante\",\n  \"price\": 30.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": 99999\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetMenuItem - não encontrado (404)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/99999",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items", "99999"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DeleteMenuItem - dono não autorizado (403)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId=99999",
+                  "host": ["{{localhost90}}"],
+                  "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items", "{{menuItemId}}"],
+                  "query": [{ "key": "ownerId", "value": "99999" }]
+                }
+              },
+              "response": []
+            }
+          ]
         }
       ]
     }

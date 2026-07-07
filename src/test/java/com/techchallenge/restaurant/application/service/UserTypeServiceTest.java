@@ -1,16 +1,21 @@
 package com.techchallenge.restaurant.application.service;
 
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
-import com.techchallenge.restaurant.application.exception.ApiConstants;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.exception.UserTypeAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.UserTypeInUseException;
+import com.techchallenge.restaurant.application.exception.UserTypeInvalidNameException;
+import com.techchallenge.restaurant.application.exception.UserTypeNotFoundException;
 import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
 import com.techchallenge.restaurant.application.port.output.UserTypePersistencePort;
+import com.techchallenge.restaurant.application.usecase.usertype.CreateUserTypeUseCase;
+import com.techchallenge.restaurant.application.usecase.usertype.DeleteUserTypeUseCase;
+import com.techchallenge.restaurant.application.usecase.usertype.GetUserTypeUseCase;
+import com.techchallenge.restaurant.application.usecase.usertype.GetUserTypesUseCase;
+import com.techchallenge.restaurant.application.usecase.usertype.UpdateUserTypeUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -42,11 +47,20 @@ class UserTypeServiceTest {
   @Mock
   private TransactionPort transactionPort;
 
-  @InjectMocks
-  private UserTypeService userTypeService;
+  private CreateUserTypeUseCase createUserTypeUseCase;
+  private UpdateUserTypeUseCase updateUserTypeUseCase;
+  private GetUserTypeUseCase getUserTypeUseCase;
+  private GetUserTypesUseCase getUserTypesUseCase;
+  private DeleteUserTypeUseCase deleteUserTypeUseCase;
 
   @BeforeEach
   void setUp() {
+    createUserTypeUseCase = new CreateUserTypeUseCase(userTypePersistencePort, transactionPort);
+    updateUserTypeUseCase = new UpdateUserTypeUseCase(userTypePersistencePort, transactionPort);
+    getUserTypeUseCase = new GetUserTypeUseCase(userTypePersistencePort, transactionPort);
+    getUserTypesUseCase = new GetUserTypesUseCase(userTypePersistencePort, transactionPort);
+    deleteUserTypeUseCase = new DeleteUserTypeUseCase(userTypePersistencePort, userPersistencePort, transactionPort);
+
     when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
@@ -54,148 +68,134 @@ class UserTypeServiceTest {
 
   @Test
   void shouldCreateUserTypeWithClienteNameSuccessfully() {
-    UserType userType = UserType.builder().name("Cliente").build();
-    UserType userTypeSaved = UserType.builder().id(1L).name("Cliente").build();
-    when(userTypePersistencePort.existsByNameIgnoreCase("Cliente")).thenReturn(false);
+    UserType userType = UserType.builder().name(UserType.CLIENTE).build();
+    UserType userTypeSaved = UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.CLIENTE)).thenReturn(false);
     when(userTypePersistencePort.save(userType)).thenReturn(userTypeSaved);
 
-    UserType result = userTypeService.createUserType(userType);
+    UserType result = createUserTypeUseCase.execute(userType);
 
     assertEquals(1L, result.getId());
-    assertEquals("Cliente", result.getName());
-    verify(userTypePersistencePort).existsByNameIgnoreCase("Cliente");
+    assertEquals(UserType.CLIENTE, result.getName());
+    verify(userTypePersistencePort).existsByNameIgnoreCase(UserType.CLIENTE);
     verify(userTypePersistencePort).save(userType);
   }
 
   @Test
   void shouldCreateUserTypeWithDonoRestauranteNameSuccessfully() {
-    UserType userType = UserType.builder().name("Dono de Restaurante").build();
-    UserType userTypeSaved = UserType.builder().id(2L).name("Dono de Restaurante").build();
-    when(userTypePersistencePort.existsByNameIgnoreCase("Dono de Restaurante")).thenReturn(false);
+    UserType userType = UserType.builder().name(UserType.DONO).build();
+    UserType userTypeSaved = UserType.builder().id(2L).name(UserType.DONO).build();
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.DONO)).thenReturn(false);
     when(userTypePersistencePort.save(userType)).thenReturn(userTypeSaved);
 
-    UserType result = userTypeService.createUserType(userType);
+    UserType result = createUserTypeUseCase.execute(userType);
 
     assertEquals(2L, result.getId());
-    assertEquals("Dono de Restaurante", result.getName());
-    verify(userTypePersistencePort).existsByNameIgnoreCase("Dono de Restaurante");
+    assertEquals(UserType.DONO, result.getName());
+    verify(userTypePersistencePort).existsByNameIgnoreCase(UserType.DONO);
     verify(userTypePersistencePort).save(userType);
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserTypeWithDuplicateName() {
-    UserType userType = UserType.builder().name("Cliente").build();
-    when(userTypePersistencePort.existsByNameIgnoreCase("Cliente")).thenReturn(true);
+    UserType userType = UserType.builder().name(UserType.CLIENTE).build();
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.CLIENTE)).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.createUserType(userType));
-
-    assertEquals(ErrorCode.USER_TYPE_ALREADY_EXISTS, exception.getCode());
-    assertEquals(ApiConstants.USER_TYPE_ALREADY_EXISTS, exception.getMessage());
+    assertThrows(UserTypeAlreadyExistsException.class,
+        () -> createUserTypeUseCase.execute(userType));
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserTypeWithInvalidName() {
     UserType userType = UserType.builder().name("Admin").build();
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.createUserType(userType));
-
-    assertEquals(ErrorCode.USER_TYPE_INVALID_NAME, exception.getCode());
-    assertEquals(ApiConstants.USER_TYPE_INVALID_NAME, exception.getMessage());
+    assertThrows(UserTypeInvalidNameException.class,
+        () -> createUserTypeUseCase.execute(userType));
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserTypeWithNullName() {
     UserType userType = UserType.builder().name(null).build();
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.createUserType(userType));
-
-    assertEquals(ErrorCode.USER_TYPE_INVALID_NAME, exception.getCode());
+    assertThrows(UserTypeInvalidNameException.class,
+        () -> createUserTypeUseCase.execute(userType));
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserTypeWithEmptyName() {
     UserType userType = UserType.builder().name("   ").build();
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.createUserType(userType));
-
-    assertEquals(ErrorCode.USER_TYPE_INVALID_NAME, exception.getCode());
+    assertThrows(UserTypeInvalidNameException.class,
+        () -> createUserTypeUseCase.execute(userType));
   }
 
   @Test
   void shouldUpdateUserTypeSuccessfully() {
-    UserType existingUserType = UserType.builder().id(1L).name("Cliente").build();
-    UserType updateData = UserType.builder().name("Dono de Restaurante").build();
-    UserType updatedUserType = UserType.builder().id(1L).name("Dono de Restaurante").build();
+    UserType existingUserType = UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    UserType updateData = UserType.builder().name(UserType.DONO).build();
+    UserType updatedUserType = UserType.builder().id(1L).name(UserType.DONO).build();
 
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existingUserType));
-    when(userTypePersistencePort.existsByNameIgnoreCase("Dono de Restaurante")).thenReturn(false);
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.DONO)).thenReturn(false);
     when(userTypePersistencePort.save(existingUserType)).thenReturn(updatedUserType);
 
-    UserType result = userTypeService.updateUserType(1L, updateData);
+    UserType result = updateUserTypeUseCase.execute(1L, updateData);
 
     assertEquals(1L, result.getId());
-    assertEquals("Dono de Restaurante", result.getName());
+    assertEquals(UserType.DONO, result.getName());
     verify(userTypePersistencePort).findById(1L);
-    verify(userTypePersistencePort).existsByNameIgnoreCase("Dono de Restaurante");
+    verify(userTypePersistencePort).existsByNameIgnoreCase(UserType.DONO);
     verify(userTypePersistencePort).save(existingUserType);
   }
 
   @Test
   void shouldUpdateUserTypeWithSameName() {
-    UserType existingUserType = UserType.builder().id(1L).name("Cliente").build();
-    UserType updateData = UserType.builder().name("Cliente").build();
+    UserType existingUserType = UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    UserType updateData = UserType.builder().name(UserType.CLIENTE).build();
 
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existingUserType));
-    when(userTypePersistencePort.existsByNameIgnoreCase("Cliente")).thenReturn(true);
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.CLIENTE)).thenReturn(true);
     when(userTypePersistencePort.save(existingUserType)).thenReturn(existingUserType);
 
-    UserType result = userTypeService.updateUserType(1L, updateData);
+    UserType result = updateUserTypeUseCase.execute(1L, updateData);
 
-    assertEquals("Cliente", result.getName());
+    assertEquals(UserType.CLIENTE, result.getName());
     verify(userTypePersistencePort).findById(1L);
-    verify(userTypePersistencePort).existsByNameIgnoreCase("Cliente");
+    verify(userTypePersistencePort).existsByNameIgnoreCase(UserType.CLIENTE);
   }
 
   @Test
   void shouldThrowExceptionWhenUpdatingUserTypeWithDuplicateName() {
-    UserType existingUserType = UserType.builder().id(1L).name("Cliente").build();
-    UserType updateData = UserType.builder().name("Dono de Restaurante").build();
+    UserType existingUserType = UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    UserType updateData = UserType.builder().name(UserType.DONO).build();
 
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existingUserType));
-    when(userTypePersistencePort.existsByNameIgnoreCase("Dono de Restaurante")).thenReturn(true);
+    when(userTypePersistencePort.existsByNameIgnoreCase(UserType.DONO)).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.updateUserType(1L, updateData));
-
-    assertEquals(ErrorCode.USER_TYPE_ALREADY_EXISTS, exception.getCode());
+    assertThrows(UserTypeAlreadyExistsException.class,
+        () -> updateUserTypeUseCase.execute(1L, updateData));
   }
 
   @Test
   void shouldThrowExceptionWhenUpdatingUserTypeWithInvalidName() {
-    UserType existingUserType = UserType.builder().id(1L).name("Cliente").build();
+    UserType existingUserType = UserType.builder().id(1L).name(UserType.CLIENTE).build();
     UserType updateData = UserType.builder().name("SuperAdmin").build();
 
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existingUserType));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.updateUserType(1L, updateData));
-
-    assertEquals(ErrorCode.USER_TYPE_INVALID_NAME, exception.getCode());
+    assertThrows(UserTypeInvalidNameException.class,
+        () -> updateUserTypeUseCase.execute(1L, updateData));
   }
 
   @Test
   void shouldGetUserTypeSuccessfully() {
-    UserType userType = UserType.builder().id(1L).name("Cliente").build();
+    UserType userType = UserType.builder().id(1L).name(UserType.CLIENTE).build();
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(userType));
 
-    UserType result = userTypeService.getUserType(1L);
+    UserType result = getUserTypeUseCase.execute(1L);
 
     assertEquals(1L, result.getId());
-    assertEquals("Cliente", result.getName());
+    assertEquals(UserType.CLIENTE, result.getName());
     verify(userTypePersistencePort).findById(1L);
   }
 
@@ -203,22 +203,21 @@ class UserTypeServiceTest {
   void shouldThrowExceptionWhenGettingNonExistentUserType() {
     when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.getUserType(999L));
+    UserTypeNotFoundException ex = assertThrows(UserTypeNotFoundException.class,
+        () -> getUserTypeUseCase.execute(999L));
 
-    assertEquals(ErrorCode.USER_TYPE_NOT_FOUND, exception.getCode());
-    assertTrue(exception.getMessage().contains("999"));
+    assertTrue(ex.getMessage().contains("999"));
   }
 
   @Test
   void shouldGetAllUserTypes() {
-    UserType userType1 = UserType.builder().id(1L).name("Cliente").build();
-    UserType userType2 = UserType.builder().id(2L).name("Dono de Restaurante").build();
+    UserType userType1 = UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    UserType userType2 = UserType.builder().id(2L).name(UserType.DONO).build();
     List<UserType> userTypes = Arrays.asList(userType1, userType2);
 
     when(userTypePersistencePort.findAll()).thenReturn(userTypes);
 
-    List<UserType> result = userTypeService.getUserTypes();
+    List<UserType> result = getUserTypesUseCase.execute();
 
     assertEquals(2, result.size());
     assertEquals(userType1, result.get(0));
@@ -230,7 +229,7 @@ class UserTypeServiceTest {
   void shouldGetEmptyListWhenNoUserTypesExist() {
     when(userTypePersistencePort.findAll()).thenReturn(List.of());
 
-    List<UserType> result = userTypeService.getUserTypes();
+    List<UserType> result = getUserTypesUseCase.execute();
 
     assertTrue(result.isEmpty());
     verify(userTypePersistencePort).findAll();
@@ -238,11 +237,11 @@ class UserTypeServiceTest {
 
   @Test
   void shouldDeleteUserTypeSuccessfully() {
-    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    UserType existing = UserType.builder().id(1L).name(UserType.CLIENTE).build();
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(0L);
 
-    userTypeService.deleteUserType(1L);
+    deleteUserTypeUseCase.execute(1L);
 
     verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);
@@ -251,15 +250,13 @@ class UserTypeServiceTest {
 
   @Test
   void shouldThrowExceptionWhenDeletingUserTypeInUse() {
-    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    UserType existing = UserType.builder().id(1L).name(UserType.CLIENTE).build();
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(5L);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userTypeService.deleteUserType(1L));
+    assertThrows(UserTypeInUseException.class,
+        () -> deleteUserTypeUseCase.execute(1L));
 
-    assertEquals(ErrorCode.USER_TYPE_IN_USE, exception.getCode());
-    assertEquals(ApiConstants.USER_TYPE_IN_USE, exception.getMessage());
     verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);
   }
@@ -271,7 +268,7 @@ class UserTypeServiceTest {
     when(userTypePersistencePort.existsByNameIgnoreCase("CLIENTE")).thenReturn(false);
     when(userTypePersistencePort.save(userType)).thenReturn(userTypeSaved);
 
-    UserType result = userTypeService.createUserType(userType);
+    UserType result = createUserTypeUseCase.execute(userType);
 
     assertEquals(1L, result.getId());
     verify(userTypePersistencePort).existsByNameIgnoreCase("CLIENTE");
@@ -279,24 +276,24 @@ class UserTypeServiceTest {
 
   @Test
   void shouldValidateAllowedNameWithDonoRestauranteIgnoreCase() {
-    UserType userType = UserType.builder().name("DONO DE RESTAURANTE").build();
-    UserType userTypeSaved = UserType.builder().id(1L).name("DONO DE RESTAURANTE").build();
-    when(userTypePersistencePort.existsByNameIgnoreCase("DONO DE RESTAURANTE")).thenReturn(false);
+    UserType userType = UserType.builder().name("DONO").build();
+    UserType userTypeSaved = UserType.builder().id(1L).name("DONO").build();
+    when(userTypePersistencePort.existsByNameIgnoreCase("DONO")).thenReturn(false);
     when(userTypePersistencePort.save(userType)).thenReturn(userTypeSaved);
 
-    UserType result = userTypeService.createUserType(userType);
+    UserType result = createUserTypeUseCase.execute(userType);
 
     assertEquals(1L, result.getId());
-    verify(userTypePersistencePort).existsByNameIgnoreCase("DONO DE RESTAURANTE");
+    verify(userTypePersistencePort).existsByNameIgnoreCase("DONO");
   }
 
   @Test
   void shouldReturnFalseWhenUserTypeIsNotInUse() {
-    UserType existing = UserType.builder().id(1L).name("Cliente").build();
+    UserType existing = UserType.builder().id(1L).name(UserType.CLIENTE).build();
     when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(existing));
     when(userPersistencePort.countByUserTypeId(1L)).thenReturn(0L);
 
-    userTypeService.deleteUserType(1L);
+    deleteUserTypeUseCase.execute(1L);
 
     verify(userTypePersistencePort).findById(1L);
     verify(userPersistencePort).countByUserTypeId(1L);

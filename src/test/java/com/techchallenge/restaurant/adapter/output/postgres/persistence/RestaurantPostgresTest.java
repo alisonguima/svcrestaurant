@@ -32,7 +32,7 @@ class RestaurantPostgresTest {
   private RestaurantPostgres restaurantPostgres;
 
   private RestaurantEntity restaurantEntity() {
-    UserTypeEntity userTypeEntity = UserTypeEntity.builder().id(1L).name("Dono de Restaurante").build();
+    UserTypeEntity userTypeEntity = UserTypeEntity.builder().id(1L).name(UserType.DONO).build();
     UserEntity ownerEntity = UserEntity.builder()
         .id(10L).name("Owner").email("owner@test.com").login("owner")
         .password("$2a$10$hashed").userType(userTypeEntity).lastUpdateAt(ZonedDateTime.now(UTC))
@@ -45,7 +45,7 @@ class RestaurantPostgresTest {
   }
 
   private Restaurant restaurantDomain() {
-    UserType userType = UserType.builder().id(1L).name("Dono de Restaurante").build();
+    UserType userType = UserType.builder().id(1L).name(UserType.DONO).build();
     User owner = User.builder()
         .id(10L).name("Owner").email("owner@test.com").login("owner")
         .password("raw").userType(userType).lastUpdateAt(ZonedDateTime.now(UTC))

@@ -5,8 +5,8 @@ import com.techchallenge.restaurant.adapter.input.request.menu.UpdateMenuItemReq
 import com.techchallenge.restaurant.adapter.input.response.menu.CreateMenuItemResponse;
 import com.techchallenge.restaurant.adapter.input.response.menu.GetMenuItemResponse;
 import com.techchallenge.restaurant.application.domain.menu.MenuItem;
-import org.mapstruct.Mapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 @Mapper
@@ -16,12 +16,12 @@ public interface MenuItemWebMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "lastUpdateAt", ignore = true)
-  @Mapping(target = "restaurant.id", ignore = true)
+  @Mapping(target = "restaurant", ignore = true)
   MenuItem createRequestToDomain(CreateMenuItemRequest request);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "lastUpdateAt", ignore = true)
-  @Mapping(target = "restaurant.id", ignore = true)
+  @Mapping(target = "restaurant", ignore = true)
   MenuItem updateRequestToDomain(UpdateMenuItemRequest request);
 
   @Mapping(target = "restaurantId", source = "restaurant.id")

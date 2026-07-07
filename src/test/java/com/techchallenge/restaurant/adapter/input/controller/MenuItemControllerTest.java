@@ -2,7 +2,11 @@ package com.techchallenge.restaurant.adapter.input.controller;
 
 import com.techchallenge.restaurant.application.domain.menu.MenuItem;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
-import com.techchallenge.restaurant.application.port.input.MenuItemUseCase;
+import com.techchallenge.restaurant.application.port.input.menuitem.CreateMenuItemPort;
+import com.techchallenge.restaurant.application.port.input.menuitem.DeleteMenuItemPort;
+import com.techchallenge.restaurant.application.port.input.menuitem.GetMenuItemPort;
+import com.techchallenge.restaurant.application.port.input.menuitem.GetMenuItemsByRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.menuitem.UpdateMenuItemPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -34,7 +38,19 @@ class MenuItemControllerTest {
   private MockMvc mockMvc;
 
   @MockBean
-  private MenuItemUseCase menuItemUseCase;
+  private CreateMenuItemPort createMenuItemUseCase;
+
+  @MockBean
+  private UpdateMenuItemPort updateMenuItemUseCase;
+
+  @MockBean
+  private GetMenuItemPort getMenuItemUseCase;
+
+  @MockBean
+  private GetMenuItemsByRestaurantPort getMenuItemsByRestaurantUseCase;
+
+  @MockBean
+  private DeleteMenuItemPort deleteMenuItemUseCase;
 
   private MenuItem menuItemDomain() {
     return MenuItem.builder()
@@ -51,11 +67,11 @@ class MenuItemControllerTest {
 
   @Test
   void create_shouldReturn201WithBody() throws Exception {
-    when(menuItemUseCase.createMenuItem(any(Long.class), any(MenuItem.class))).thenReturn(menuItemDomain());
+    when(createMenuItemUseCase.execute(anyLong(), anyLong(), any(MenuItem.class))).thenReturn(menuItemDomain());
 
     mockMvc.perform(post("/api/v1/restaurants/7/menu-items")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"name\":\"Picanha\",\"description\":\"Picanha na brasa\",\"price\":79.9,\"onlyAtRestaurant\":true,\"photoPath\":\"/tmp/picanha.jpg\"}"))
+            .content("{\"name\":\"Picanha\",\"description\":\"Picanha na brasa\",\"price\":79.9,\"onlyAtRestaurant\":true,\"photoPath\":\"/tmp/picanha.jpg\",\"ownerId\":2}"))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value("11"))
         .andExpect(jsonPath("$.name").value("Picanha"))
@@ -65,7 +81,7 @@ class MenuItemControllerTest {
 
   @Test
   void get_shouldReturn200WithBody() throws Exception {
-    when(menuItemUseCase.getMenuItem(7L, 11L)).thenReturn(menuItemDomain());
+    when(getMenuItemUseCase.execute(7L, 11L)).thenReturn(menuItemDomain());
 
     mockMvc.perform(get("/api/v1/restaurants/7/menu-items/11"))
         .andExpect(status().isOk())
@@ -76,7 +92,7 @@ class MenuItemControllerTest {
 
   @Test
   void getAll_shouldReturn200WithList() throws Exception {
-    when(menuItemUseCase.getMenuItemsByRestaurant(7L)).thenReturn(List.of(menuItemDomain()));
+    when(getMenuItemsByRestaurantUseCase.execute(7L)).thenReturn(List.of(menuItemDomain()));
 
     mockMvc.perform(get("/api/v1/restaurants/7/menu-items"))
         .andExpect(status().isOk())
@@ -87,11 +103,11 @@ class MenuItemControllerTest {
 
   @Test
   void update_shouldReturn200WithBody() throws Exception {
-    when(menuItemUseCase.updateMenuItem(anyLong(), anyLong(), any(MenuItem.class))).thenReturn(menuItemDomain());
+    when(updateMenuItemUseCase.execute(anyLong(), anyLong(), anyLong(), any(MenuItem.class))).thenReturn(menuItemDomain());
 
     mockMvc.perform(patch("/api/v1/restaurants/7/menu-items/11")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"name\":\"Picanha Atualizada\"}"))
+            .content("{\"name\":\"Picanha Atualizada\",\"ownerId\":2}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value("11"))
         .andExpect(jsonPath("$.name").value("Picanha"));
@@ -99,9 +115,10 @@ class MenuItemControllerTest {
 
   @Test
   void delete_shouldReturn204() throws Exception {
-    doNothing().when(menuItemUseCase).deleteMenuItem(anyLong(), anyLong());
+    doNothing().when(deleteMenuItemUseCase).execute(anyLong(), anyLong(), anyLong());
 
-    mockMvc.perform(delete("/api/v1/restaurants/7/menu-items/11"))
+    mockMvc.perform(delete("/api/v1/restaurants/7/menu-items/11")
+            .param("ownerId", "2"))
         .andExpect(status().isNoContent());
   }
 }

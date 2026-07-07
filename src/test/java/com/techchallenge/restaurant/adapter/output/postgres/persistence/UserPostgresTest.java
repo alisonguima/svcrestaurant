@@ -29,7 +29,7 @@ class UserPostgresTest {
   private UserPostgres userPostgres;
 
   private UserTypeEntity userTypeEntity() {
-    return UserTypeEntity.builder().id(1L).name("Cliente").build();
+    return UserTypeEntity.builder().id(1L).name(UserType.CLIENTE).build();
   }
 
   private UserEntity userEntity() {
@@ -50,7 +50,7 @@ class UserPostgresTest {
         .email("joao@test.com")
         .login("joao")
         .password("rawPassword")
-        .userType(UserType.builder().id(1L).name("Cliente").build())
+        .userType(UserType.builder().id(1L).name(UserType.CLIENTE).build())
         .lastUpdateAt(ZonedDateTime.now(UTC))
         .build();
   }

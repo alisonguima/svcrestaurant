@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 /**
  * Dados necessários para o cadastro de um novo restaurante.
  * O usuário indicado em {@code ownerUserId} deve existir e ser do tipo
- * {@code "Dono de Restaurante"}.
+ * {@code "Dono"}.
  *
  * @param name          nome do restaurante (único)
  * @param address       endereço do restaurante
@@ -38,6 +38,6 @@ public record CreateRestaurantRequest(
     @Size(min = 2, max = 100)
     String openingHours,
 
-    @Schema(description = "Id do usuário dono do restaurante (deve ser do tipo \"Dono de Restaurante\")")
+    @Schema(description = "Id do usuário dono do restaurante (deve ser do tipo \"Dono\")")
     @NotNull(message = InputValidationConstants.RESTAURANT_OWNER_REQUIRED)
     Long ownerUserId) {}

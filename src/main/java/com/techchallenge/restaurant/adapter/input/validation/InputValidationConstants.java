@@ -1,6 +1,6 @@
 package com.techchallenge.restaurant.adapter.input.validation;
 
-import com.techchallenge.restaurant.application.exception.ApiConstants;
+import com.techchallenge.restaurant.application.domain.usertype.UserType;
 
 public final class InputValidationConstants {
 
@@ -24,8 +24,8 @@ public final class InputValidationConstants {
 
   public static final String USER_TYPE_NAME_REQUIRED = "User type name is required";
   public static final String USER_TYPE_NAME_SIZE = "User type name must be between 2 and 100 characters";
-  public static final String USER_TYPE_ALLOWED_NAMES =
-      ApiConstants.USER_TYPE_DONO_RESTAURANTE + "|" + ApiConstants.USER_TYPE_CLIENTE;
+  public static final String USER_TYPE_ALLOWED_NAMES = UserType.DONO + "|" + UserType.CLIENTE;
+  public static final String USER_TYPE_INVALID_NAME = "User type must be 'Dono' or 'Cliente'";
 
   public static final String RESTAURANT_NAME_REQUIRED = "Restaurant name is required";
   public static final String RESTAURANT_ADDRESS_REQUIRED = "Restaurant address is required";
@@ -38,4 +38,5 @@ public final class InputValidationConstants {
   public static final String MENU_ITEM_PRICE_REQUIRED = "Menu item price is required";
   public static final String MENU_ITEM_PRICE_INVALID = "Menu item price must be greater than zero";
   public static final String MENU_ITEM_PHOTO_PATH_REQUIRED = "Menu item photo path is required";
+  public static final String MENU_ITEM_OWNER_REQUIRED = "Menu item owner id is required";
 }

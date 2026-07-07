@@ -1,7 +1,22 @@
 package com.techchallenge.restaurant.adapter.input.exception;
 
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.exception.BaseException;
+import com.techchallenge.restaurant.application.exception.EmailAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.InvalidPasswordException;
+import com.techchallenge.restaurant.application.exception.LoginAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.MenuItemAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.MenuItemNotFoundException;
+import com.techchallenge.restaurant.application.exception.MenuItemOwnerUnauthorizedException;
+import com.techchallenge.restaurant.application.exception.MenuItemRestaurantNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.RestaurantNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerUnauthorizedException;
+import com.techchallenge.restaurant.application.exception.UserNotFoundException;
+import com.techchallenge.restaurant.application.exception.UserTypeAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.UserTypeInUseException;
+import com.techchallenge.restaurant.application.exception.UserTypeInvalidNameException;
+import com.techchallenge.restaurant.application.exception.UserTypeNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -15,9 +30,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.containsString;
@@ -29,11 +44,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GlobalExceptionHandlerTest {
 
   private MockMvc mockMvc;
+  private final AtomicReference<BaseException> pendingException = new AtomicReference<>();
 
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcBuilders
-        .standaloneSetup(new TestController())
+        .standaloneSetup(new TestController(pendingException))
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
   }
@@ -54,8 +70,6 @@ class GlobalExceptionHandlerTest {
 
   @Test
   void handleValidation_withMultipleErrorsOnSameField_shouldMergeDuplicateKeys() throws Exception {
-    // Envia string vazia para um campo com @NotBlank + @Pattern: ambos falham
-    // sobre o mesmo field "name", acionando o merge function (existing, duplicate) -> existing
     mockMvc.perform(post("/test/validation-multi")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"name\": \"\"}"))
@@ -106,35 +120,37 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.timestamp").value(notNullValue()));
   }
 
-  // ── handleBusiness — cada arm do switch ───────────────────────────────
+  // ── handleBusiness — cada exception tipada ────────────────────────────
 
   @ParameterizedTest
   @MethodSource("businessErrorCases")
-  void handleBusiness_shouldMapEachErrorCodeToExpectedHttpStatus(ErrorCode code, int expectedStatus) throws Exception {
-    mockMvc.perform(post("/test/business")
-            .param("code", code.name()))
+  void handleBusiness_shouldMapEachExceptionToExpectedHttpStatus(
+      BaseException ex, int expectedStatus) throws Exception {
+    pendingException.set(ex);
+    mockMvc.perform(post("/test/business"))
         .andExpect(status().is(expectedStatus))
-        .andExpect(jsonPath("$.detail").value("error: " + code.name()))
+        .andExpect(jsonPath("$.detail").value(ex.getMessage()))
         .andExpect(jsonPath("$.timestamp").value(notNullValue()));
   }
 
   static Stream<Arguments> businessErrorCases() {
     return Stream.of(
-        Arguments.of(ErrorCode.EMAIL_ALREADY_EXISTS,           422),
-        Arguments.of(ErrorCode.LOGIN_ALREADY_EXISTS,           422),
-        Arguments.of(ErrorCode.USER_NOT_FOUND,                 404),
-        Arguments.of(ErrorCode.INVALID_PASSWORD,               422),
-        Arguments.of(ErrorCode.USER_TYPE_NOT_FOUND,            404),
-        Arguments.of(ErrorCode.USER_TYPE_INVALID_NAME,         422),
-        Arguments.of(ErrorCode.USER_TYPE_ALREADY_EXISTS,       422),
-        Arguments.of(ErrorCode.RESTAURANT_ALREADY_EXISTS,      422),
-        Arguments.of(ErrorCode.MENU_ITEM_ALREADY_EXISTS,       422),
-        Arguments.of(ErrorCode.USER_TYPE_IN_USE,               409),
-        Arguments.of(ErrorCode.RESTAURANT_NOT_FOUND,           404),
-        Arguments.of(ErrorCode.RESTAURANT_OWNER_NOT_FOUND,     404),
-        Arguments.of(ErrorCode.RESTAURANT_OWNER_UNAUTHORIZED,  403),
-        Arguments.of(ErrorCode.MENU_ITEM_NOT_FOUND,            404),
-        Arguments.of(ErrorCode.MENU_ITEM_RESTAURANT_NOT_FOUND, 404)
+        Arguments.of(new EmailAlreadyExistsException(),           422),
+        Arguments.of(new LoginAlreadyExistsException(),           422),
+        Arguments.of(new UserNotFoundException(1L),               404),
+        Arguments.of(new InvalidPasswordException(),              422),
+        Arguments.of(new UserTypeNotFoundException(1L),           404),
+        Arguments.of(new UserTypeInvalidNameException(),          422),
+        Arguments.of(new UserTypeAlreadyExistsException(),        422),
+        Arguments.of(new RestaurantAlreadyExistsException(),      422),
+        Arguments.of(new MenuItemAlreadyExistsException(),        422),
+        Arguments.of(new UserTypeInUseException(),                409),
+        Arguments.of(new RestaurantNotFoundException(1L),         404),
+        Arguments.of(new RestaurantOwnerNotFoundException(),      404),
+        Arguments.of(new RestaurantOwnerUnauthorizedException(),  403),
+        Arguments.of(new MenuItemNotFoundException(1L),           404),
+        Arguments.of(new MenuItemRestaurantNotFoundException(),   404),
+        Arguments.of(new MenuItemOwnerUnauthorizedException(),    403)
     );
   }
 
@@ -143,12 +159,19 @@ class GlobalExceptionHandlerTest {
   @RestController
   static class TestController {
 
+    private final AtomicReference<BaseException> pending;
+
+    TestController(AtomicReference<BaseException> pending) {
+      this.pending = pending;
+    }
+
     @PostMapping("/test/validation")
     void validation(@Valid @RequestBody ValidBody body) {}
 
     @PostMapping("/test/business")
-    void business(@RequestParam String code) {
-      throw new DefaultException(ErrorCode.valueOf(code), "error: " + code);
+    void business() {
+      BaseException ex = pending.getAndSet(null);
+      if (ex != null) throw ex;
     }
 
     @PostMapping("/test/generic")

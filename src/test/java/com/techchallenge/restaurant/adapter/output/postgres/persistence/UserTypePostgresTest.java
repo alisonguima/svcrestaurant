@@ -31,24 +31,24 @@ class UserTypePostgresTest {
 
   @Test
   void save_shouldMapToEntitySaveAndReturnDomain() {
-    when(userTypeRepository.save(any())).thenReturn(entity(1L, "Cliente"));
+    when(userTypeRepository.save(any())).thenReturn(entity(1L, UserType.CLIENTE));
 
-    UserType result = userTypePostgres.save(UserType.builder().name("Cliente").build());
+    UserType result = userTypePostgres.save(UserType.builder().name(UserType.CLIENTE).build());
 
     assertEquals(1L, result.getId());
-    assertEquals("Cliente", result.getName());
+    assertEquals(UserType.CLIENTE, result.getName());
     verify(userTypeRepository).save(any(UserTypeEntity.class));
   }
 
   @Test
   void findById_shouldReturnMappedDomain_whenEntityExists() {
-    when(userTypeRepository.findById(1L)).thenReturn(Optional.of(entity(1L, "Cliente")));
+    when(userTypeRepository.findById(1L)).thenReturn(Optional.of(entity(1L, UserType.CLIENTE)));
 
     Optional<UserType> result = userTypePostgres.findById(1L);
 
     assertTrue(result.isPresent());
     assertEquals(1L, result.get().getId());
-    assertEquals("Cliente", result.get().getName());
+    assertEquals(UserType.CLIENTE, result.get().getName());
   }
 
   @Test
@@ -63,15 +63,15 @@ class UserTypePostgresTest {
   @Test
   void findAll_shouldReturnMappedList() {
     when(userTypeRepository.findAll()).thenReturn(List.of(
-        entity(1L, "Cliente"),
-        entity(2L, "Dono de Restaurante")
+        entity(1L, UserType.CLIENTE),
+        entity(2L, UserType.DONO)
     ));
 
     List<UserType> result = userTypePostgres.findAll();
 
     assertEquals(2, result.size());
-    assertEquals("Cliente", result.get(0).getName());
-    assertEquals("Dono de Restaurante", result.get(1).getName());
+    assertEquals(UserType.CLIENTE, result.get(0).getName());
+    assertEquals(UserType.DONO, result.get(1).getName());
   }
 
   @Test
@@ -85,10 +85,10 @@ class UserTypePostgresTest {
 
   @Test
   void existsByNameIgnoreCase_shouldReturnTrue_whenNameExists() {
-    when(userTypeRepository.existsByNameIgnoreCase("Cliente")).thenReturn(true);
+    when(userTypeRepository.existsByNameIgnoreCase(UserType.CLIENTE)).thenReturn(true);
 
-    assertTrue(userTypePostgres.existsByNameIgnoreCase("Cliente"));
-    verify(userTypeRepository).existsByNameIgnoreCase("Cliente");
+    assertTrue(userTypePostgres.existsByNameIgnoreCase(UserType.CLIENTE));
+    verify(userTypeRepository).existsByNameIgnoreCase(UserType.CLIENTE);
   }
 
   @Test

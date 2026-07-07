@@ -2,7 +2,12 @@ package com.techchallenge.restaurant.adapter.input.controller;
 
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.port.input.UserUseCase;
+import com.techchallenge.restaurant.application.port.input.user.AssignUserTypePort;
+import com.techchallenge.restaurant.application.port.input.user.CreateUserPort;
+import com.techchallenge.restaurant.application.port.input.user.DeleteUserPort;
+import com.techchallenge.restaurant.application.port.input.user.GetUserPort;
+import com.techchallenge.restaurant.application.port.input.user.UpdateUserPasswordPort;
+import com.techchallenge.restaurant.application.port.input.user.UpdateUserPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,7 +38,22 @@ class UserControllerTest {
   private MockMvc mockMvc;
 
   @MockBean
-  private UserUseCase userUseCase;
+  private CreateUserPort createUserUseCase;
+
+  @MockBean
+  private UpdateUserPort updateUserUseCase;
+
+  @MockBean
+  private UpdateUserPasswordPort updateUserPasswordUseCase;
+
+  @MockBean
+  private AssignUserTypePort assignUserTypeUseCase;
+
+  @MockBean
+  private GetUserPort getUserUseCase;
+
+  @MockBean
+  private DeleteUserPort deleteUserUseCase;
 
   private User userDomain() {
     return User.builder()
@@ -42,14 +62,14 @@ class UserControllerTest {
         .email("joao@test.com")
         .login("joao")
         .password("$2a$10$hashed")
-        .userType(UserType.builder().id(2L).name("Cliente").build())
+        .userType(UserType.builder().id(2L).name(UserType.CLIENTE).build())
         .lastUpdateAt(ZonedDateTime.parse("2026-07-03T12:00:00Z"))
         .build();
   }
 
   @Test
   void createUser_shouldReturn201WithResponseBody() throws Exception {
-    when(userUseCase.createUser(any(User.class))).thenReturn(userDomain());
+    when(createUserUseCase.execute(any(User.class))).thenReturn(userDomain());
 
     mockMvc.perform(post("/api/v1/user")
             .contentType(MediaType.APPLICATION_JSON)
@@ -68,12 +88,12 @@ class UserControllerTest {
         .andExpect(jsonPath("$.email").value("joao@test.com"))
         .andExpect(jsonPath("$.login").value("joao"))
         .andExpect(jsonPath("$.userType.id").value("2"))
-        .andExpect(jsonPath("$.userType.name").value("Cliente"));
+        .andExpect(jsonPath("$.userType.name").value(UserType.CLIENTE));
   }
 
   @Test
   void getUser_shouldReturn200WithResponseBody() throws Exception {
-    when(userUseCase.getUser(1L)).thenReturn(userDomain());
+    when(getUserUseCase.execute(1L)).thenReturn(userDomain());
 
     mockMvc.perform(get("/api/v1/user/1"))
         .andExpect(status().isOk())
@@ -81,12 +101,12 @@ class UserControllerTest {
         .andExpect(jsonPath("$.name").value("João Silva"))
         .andExpect(jsonPath("$.email").value("joao@test.com"))
         .andExpect(jsonPath("$.login").value("joao"))
-        .andExpect(jsonPath("$.userType.name").value("Cliente"));
+        .andExpect(jsonPath("$.userType.name").value(UserType.CLIENTE));
   }
 
   @Test
   void updateUser_shouldReturn204() throws Exception {
-    doNothing().when(userUseCase).updateUser(anyLong(), any(User.class));
+    doNothing().when(updateUserUseCase).execute(anyLong(), any(User.class));
 
     mockMvc.perform(patch("/api/v1/user/1")
             .contentType(MediaType.APPLICATION_JSON)
@@ -102,7 +122,7 @@ class UserControllerTest {
 
   @Test
   void updatePassword_shouldReturn204() throws Exception {
-    doNothing().when(userUseCase).updatePassword(anyLong(), anyString(), anyString());
+    doNothing().when(updateUserPasswordUseCase).execute(anyLong(), anyString(), anyString());
 
     mockMvc.perform(patch("/api/v1/user/1/password")
             .contentType(MediaType.APPLICATION_JSON)
@@ -117,7 +137,7 @@ class UserControllerTest {
 
   @Test
   void assignUserType_shouldReturn204() throws Exception {
-    doNothing().when(userUseCase).assignUserType(anyLong(), anyLong());
+    doNothing().when(assignUserTypeUseCase).execute(anyLong(), anyLong());
 
     mockMvc.perform(patch("/api/v1/user/1/user-type/2"))
         .andExpect(status().isNoContent());
@@ -125,7 +145,7 @@ class UserControllerTest {
 
   @Test
   void deleteUser_shouldReturn204() throws Exception {
-    doNothing().when(userUseCase).deleteUser(anyLong());
+    doNothing().when(deleteUserUseCase).execute(anyLong());
 
     mockMvc.perform(delete("/api/v1/user/1"))
         .andExpect(status().isNoContent());

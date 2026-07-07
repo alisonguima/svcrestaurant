@@ -2,19 +2,26 @@ package com.techchallenge.restaurant.application.service;
 
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.exception.ApiConstants;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.exception.EmailAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.InvalidPasswordException;
+import com.techchallenge.restaurant.application.exception.LoginAlreadyExistsException;
+import com.techchallenge.restaurant.application.exception.UserNotFoundException;
+import com.techchallenge.restaurant.application.exception.UserTypeNotFoundException;
 import com.techchallenge.restaurant.application.port.output.DateTimeProviderPort;
 import com.techchallenge.restaurant.application.port.output.PasswordEncryptionPort;
 import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
 import com.techchallenge.restaurant.application.port.output.UserTypePersistencePort;
+import com.techchallenge.restaurant.application.usecase.user.AssignUserTypeUseCase;
+import com.techchallenge.restaurant.application.usecase.user.CreateUserUseCase;
+import com.techchallenge.restaurant.application.usecase.user.DeleteUserUseCase;
+import com.techchallenge.restaurant.application.usecase.user.GetUserUseCase;
+import com.techchallenge.restaurant.application.usecase.user.UpdateUserPasswordUseCase;
+import com.techchallenge.restaurant.application.usecase.user.UpdateUserUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -52,13 +59,28 @@ class UserServiceTest {
   @Mock
   private TransactionPort transactionPort;
 
-  @InjectMocks
-  private UserService userService;
+  private CreateUserUseCase createUserUseCase;
+  private UpdateUserUseCase updateUserUseCase;
+  private UpdateUserPasswordUseCase updateUserPasswordUseCase;
+  private AssignUserTypeUseCase assignUserTypeUseCase;
+  private GetUserUseCase getUserUseCase;
+  private DeleteUserUseCase deleteUserUseCase;
 
   private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
 
   @BeforeEach
   void setUp() {
+    createUserUseCase = new CreateUserUseCase(userPersistencePort, passwordEncryptionPort,
+        dateTimeProviderPort, userTypePersistencePort, transactionPort);
+    updateUserUseCase = new UpdateUserUseCase(userPersistencePort, dateTimeProviderPort,
+        userTypePersistencePort, transactionPort);
+    updateUserPasswordUseCase = new UpdateUserPasswordUseCase(userPersistencePort,
+        passwordEncryptionPort, dateTimeProviderPort, transactionPort);
+    assignUserTypeUseCase = new AssignUserTypeUseCase(userPersistencePort, userTypePersistencePort,
+        dateTimeProviderPort, transactionPort);
+    getUserUseCase = new GetUserUseCase(userPersistencePort, transactionPort);
+    deleteUserUseCase = new DeleteUserUseCase(userPersistencePort, transactionPort);
+
     when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
@@ -82,7 +104,7 @@ class UserServiceTest {
 
   @Test
   void shouldCreateUserSuccessfully() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User user = User.builder()
         .name("João Silva")
         .email("joao@email.com")
@@ -99,7 +121,7 @@ class UserServiceTest {
     User savedUser = createTestUser(1L, "João Silva", "joao@email.com", "joao.silva", userType);
     when(userPersistencePort.save(any(User.class))).thenReturn(savedUser);
 
-    User result = userService.createUser(user);
+    User result = createUserUseCase.execute(user);
 
     assertNotNull(result);
     assertEquals(1L, result.getId());
@@ -116,7 +138,7 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenCreatingUserWithDuplicateEmail() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User user = User.builder()
         .name("João Silva")
         .email("joao@email.com")
@@ -127,16 +149,13 @@ class UserServiceTest {
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.createUser(user));
-
-    assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, exception.getCode());
-    assertEquals(ApiConstants.EMAIL_ALREADY_EXISTS, exception.getMessage());
+    assertThrows(EmailAlreadyExistsException.class,
+        () -> createUserUseCase.execute(user));
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserWithDuplicateLogin() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User user = User.builder()
         .name("João Silva")
         .email("joao@email.com")
@@ -148,16 +167,13 @@ class UserServiceTest {
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.createUser(user));
-
-    assertEquals(ErrorCode.LOGIN_ALREADY_EXISTS, exception.getCode());
-    assertEquals(ApiConstants.LOGIN_ALREADY_EXISTS, exception.getMessage());
+    assertThrows(LoginAlreadyExistsException.class,
+        () -> createUserUseCase.execute(user));
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingUserWithNonExistentUserType() {
-    UserType userType = createUserType(999L, "Cliente");
+    UserType userType = createUserType(999L, UserType.CLIENTE);
     User user = User.builder()
         .name("João Silva")
         .email("joao@email.com")
@@ -170,15 +186,13 @@ class UserServiceTest {
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(false);
     when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.createUser(user));
-
-    assertEquals(ErrorCode.USER_TYPE_NOT_FOUND, exception.getCode());
+    assertThrows(UserTypeNotFoundException.class,
+        () -> createUserUseCase.execute(user));
   }
 
   @Test
   void shouldUpdateUserSuccessfully() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .name("João Silva Atualizado")
@@ -194,7 +208,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updateUser(1L, updateData);
+    updateUserUseCase.execute(1L, updateData);
 
     verify(userPersistencePort).findById(1L);
     verify(userPersistencePort).existsByEmail("joao.novo@email.com");
@@ -204,7 +218,7 @@ class UserServiceTest {
 
   @Test
   void shouldUpdateUserWithPartialData() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .name("João Atualizado")
@@ -214,7 +228,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updateUser(1L, updateData);
+    updateUserUseCase.execute(1L, updateData);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -226,7 +240,7 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingUserWithDuplicateEmail() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .email("outro@email.com")
@@ -235,15 +249,13 @@ class UserServiceTest {
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userPersistencePort.existsByEmail("outro@email.com")).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.updateUser(1L, updateData));
-
-    assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, exception.getCode());
+    assertThrows(EmailAlreadyExistsException.class,
+        () -> updateUserUseCase.execute(1L, updateData));
   }
 
   @Test
   void shouldThrowExceptionWhenUpdatingUserWithDuplicateLogin() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .login("outro.login")
@@ -252,10 +264,8 @@ class UserServiceTest {
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userPersistencePort.existsByLogin("outro.login")).thenReturn(true);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.updateUser(1L, updateData));
-
-    assertEquals(ErrorCode.LOGIN_ALREADY_EXISTS, exception.getCode());
+    assertThrows(LoginAlreadyExistsException.class,
+        () -> updateUserUseCase.execute(1L, updateData));
   }
 
   @Test
@@ -264,15 +274,13 @@ class UserServiceTest {
 
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.updateUser(999L, updateData));
-
-    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+    assertThrows(UserNotFoundException.class,
+        () -> updateUserUseCase.execute(999L, updateData));
   }
 
   @Test
   void shouldUpdatePasswordSuccessfully() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
@@ -282,7 +290,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updatePassword(1L, "Senha@123", "NovaSenha@123");
+    updateUserPasswordUseCase.execute(1L, "Senha@123", "NovaSenha@123");
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -292,37 +300,33 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingPasswordWithInvalidCurrentPassword() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(passwordEncryptionPort.matches("SenhaErrada@123", "encodedPassword")).thenReturn(false);
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.updatePassword(1L, "SenhaErrada@123", "NovaSenha@123"));
-
-    assertEquals(ErrorCode.INVALID_PASSWORD, exception.getCode());
-    assertEquals(ApiConstants.INVALID_PASSWORD, exception.getMessage());
+    assertThrows(InvalidPasswordException.class,
+        () -> updateUserPasswordUseCase.execute(1L, "SenhaErrada@123", "NovaSenha@123"));
   }
 
   @Test
   void shouldNotUpdatePasswordWhenNewPasswordIsSameAsCurrent() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(passwordEncryptionPort.matches("Senha@123", "encodedPassword")).thenReturn(true);
-    when(passwordEncryptionPort.matches("Senha@123", "encodedPassword")).thenReturn(true);
 
-    userService.updatePassword(1L, "Senha@123", "Senha@123");
+    updateUserPasswordUseCase.execute(1L, "Senha@123", "Senha@123");
 
     verify(userPersistencePort).findById(1L);
   }
 
   @Test
   void shouldAssignUserTypeSuccessfully() {
-    UserType oldUserType = createUserType(1L, "Cliente");
-    UserType newUserType = createUserType(2L, "Dono de Restaurante");
+    UserType oldUserType = createUserType(1L, UserType.CLIENTE);
+    UserType newUserType = createUserType(2L, UserType.DONO);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", oldUserType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
@@ -330,7 +334,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.assignUserType(1L, 2L);
+    assignUserTypeUseCase.execute(1L, 2L);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -340,26 +344,24 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenAssigningNonExistentUserType() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.assignUserType(1L, 999L));
-
-    assertEquals(ErrorCode.USER_TYPE_NOT_FOUND, exception.getCode());
+    assertThrows(UserTypeNotFoundException.class,
+        () -> assignUserTypeUseCase.execute(1L, 999L));
   }
 
   @Test
   void shouldDeleteUserSuccessfully() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
 
-    userService.deleteUser(1L);
+    deleteUserUseCase.execute(1L);
 
     verify(userPersistencePort).findById(1L);
     verify(userPersistencePort).deleteById(1L);
@@ -369,20 +371,18 @@ class UserServiceTest {
   void shouldThrowExceptionWhenDeletingNonExistentUser() {
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.deleteUser(999L));
-
-    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+    assertThrows(UserNotFoundException.class,
+        () -> deleteUserUseCase.execute(999L));
   }
 
   @Test
   void shouldGetUserSuccessfully() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User user = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(user));
 
-    User result = userService.getUser(1L);
+    User result = getUserUseCase.execute(1L);
 
     assertNotNull(result);
     assertEquals(1L, result.getId());
@@ -395,17 +395,16 @@ class UserServiceTest {
   void shouldThrowExceptionWhenGettingNonExistentUser() {
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.getUser(999L));
+    UserNotFoundException ex = assertThrows(UserNotFoundException.class,
+        () -> getUserUseCase.execute(999L));
 
-    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
-    assertTrue(exception.getMessage().contains("999"));
+    assertTrue(ex.getMessage().contains("999"));
   }
 
   @Test
   void shouldUpdateUserWithNewUserType() {
-    UserType oldUserType = createUserType(1L, "Cliente");
-    UserType newUserType = createUserType(2L, "Dono de Restaurante");
+    UserType oldUserType = createUserType(1L, UserType.CLIENTE);
+    UserType newUserType = createUserType(2L, UserType.DONO);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", oldUserType);
     User updateData = User.builder()
         .userType(newUserType)
@@ -416,7 +415,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updateUser(1L, updateData);
+    updateUserUseCase.execute(1L, updateData);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -426,7 +425,7 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingUserWithNonExistentUserType() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .userType(UserType.builder().id(999L).build())
@@ -435,15 +434,13 @@ class UserServiceTest {
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.updateUser(1L, updateData));
-
-    assertEquals(ErrorCode.USER_TYPE_NOT_FOUND, exception.getCode());
+    assertThrows(UserTypeNotFoundException.class,
+        () -> updateUserUseCase.execute(1L, updateData));
   }
 
   @Test
-  void shouldUpdateUserWithEmailSameasExisting() {
-    UserType userType = createUserType(1L, "Cliente");
+  void shouldUpdateUserWithEmailSameAsExisting() {
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .email("joao@email.com")
@@ -453,7 +450,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updateUser(1L, updateData);
+    updateUserUseCase.execute(1L, updateData);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -463,7 +460,7 @@ class UserServiceTest {
 
   @Test
   void shouldUpdateUserWithLoginSameAsExisting() {
-    UserType userType = createUserType(1L, "Cliente");
+    UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
     User updateData = User.builder()
         .login("joao.silva")
@@ -473,7 +470,7 @@ class UserServiceTest {
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
     when(userPersistencePort.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    userService.updateUser(1L, updateData);
+    updateUserUseCase.execute(1L, updateData);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userPersistencePort).save(userCaptor.capture());
@@ -485,9 +482,7 @@ class UserServiceTest {
   void shouldThrowExceptionWhenAssigningUserTypeToNonExistentUser() {
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> userService.assignUserType(999L, 1L));
-
-    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getCode());
+    assertThrows(UserNotFoundException.class,
+        () -> assignUserTypeUseCase.execute(999L, 1L));
   }
 }

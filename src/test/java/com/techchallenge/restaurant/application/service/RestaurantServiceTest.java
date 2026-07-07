@@ -3,18 +3,22 @@ package com.techchallenge.restaurant.application.service;
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import com.techchallenge.restaurant.application.domain.user.User;
-import com.techchallenge.restaurant.application.exception.ApiConstants;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.exception.RestaurantNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerUnauthorizedException;
 import com.techchallenge.restaurant.application.port.output.DateTimeProviderPort;
 import com.techchallenge.restaurant.application.port.output.RestaurantPersistencePort;
 import com.techchallenge.restaurant.application.port.output.TransactionPort;
 import com.techchallenge.restaurant.application.port.output.UserPersistencePort;
+import com.techchallenge.restaurant.application.usecase.restaurant.CreateRestaurantUseCase;
+import com.techchallenge.restaurant.application.usecase.restaurant.DeleteRestaurantUseCase;
+import com.techchallenge.restaurant.application.usecase.restaurant.GetRestaurantUseCase;
+import com.techchallenge.restaurant.application.usecase.restaurant.GetRestaurantsUseCase;
+import com.techchallenge.restaurant.application.usecase.restaurant.UpdateRestaurantUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -51,20 +55,31 @@ class RestaurantServiceTest {
   @Mock
   private TransactionPort transactionPort;
 
-  @InjectMocks
-  private RestaurantService restaurantService;
+  private CreateRestaurantUseCase createRestaurantUseCase;
+  private UpdateRestaurantUseCase updateRestaurantUseCase;
+  private GetRestaurantUseCase getRestaurantUseCase;
+  private GetRestaurantsUseCase getRestaurantsUseCase;
+  private DeleteRestaurantUseCase deleteRestaurantUseCase;
 
   private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
 
   @BeforeEach
   void setUp() {
+    createRestaurantUseCase = new CreateRestaurantUseCase(restaurantPersistencePort,
+        userPersistencePort, dateTimeProviderPort, transactionPort);
+    updateRestaurantUseCase = new UpdateRestaurantUseCase(restaurantPersistencePort,
+        userPersistencePort, dateTimeProviderPort, transactionPort);
+    getRestaurantUseCase = new GetRestaurantUseCase(restaurantPersistencePort, transactionPort);
+    getRestaurantsUseCase = new GetRestaurantsUseCase(restaurantPersistencePort, transactionPort);
+    deleteRestaurantUseCase = new DeleteRestaurantUseCase(restaurantPersistencePort, transactionPort);
+
     when(transactionPort.execute(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     when(transactionPort.executeReadOnly(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
     doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
   }
 
   private static final UserType DONO_USER_TYPE =
-      UserType.builder().id(1L).name("Dono de Restaurante").build();
+      UserType.builder().id(1L).name(UserType.DONO).build();
 
   private User createOwner(Long id) {
     return User.builder().id(id).name("Chef Owner").userType(DONO_USER_TYPE).build();
@@ -94,7 +109,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.save(any(Restaurant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    Restaurant result = restaurantService.createRestaurant(Restaurant.builder()
+    Restaurant result = createRestaurantUseCase.execute(Restaurant.builder()
         .name("Casa do Chef")
         .address("Rua A, 123")
         .cuisineType("Brasileira")
@@ -111,21 +126,18 @@ class RestaurantServiceTest {
 
   @Test
   void shouldThrowExceptionWhenOwnerIsClientType() {
-    UserType clientType = UserType.builder().id(2L).name("Cliente").build();
+    UserType clientType = UserType.builder().id(2L).name(UserType.CLIENTE).build();
     User clientOwner = createOwnerWithType(10L, clientType);
     when(userPersistencePort.findById(10L)).thenReturn(Optional.of(clientOwner));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.createRestaurant(Restaurant.builder()
+    assertThrows(RestaurantOwnerUnauthorizedException.class,
+        () -> createRestaurantUseCase.execute(Restaurant.builder()
             .name("Casa do Chef")
             .address("Rua A, 123")
             .cuisineType("Brasileira")
             .openingHours("10:00-22:00")
             .owner(User.builder().id(10L).build())
             .build()));
-
-    assertEquals(ErrorCode.RESTAURANT_OWNER_UNAUTHORIZED, exception.getCode());
-    assertEquals(ApiConstants.RESTAURANT_OWNER_UNAUTHORIZED, exception.getMessage());
   }
 
   @Test
@@ -133,34 +145,28 @@ class RestaurantServiceTest {
     User ownerWithoutType = createOwnerWithType(10L, null);
     when(userPersistencePort.findById(10L)).thenReturn(Optional.of(ownerWithoutType));
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.createRestaurant(Restaurant.builder()
+    assertThrows(RestaurantOwnerUnauthorizedException.class,
+        () -> createRestaurantUseCase.execute(Restaurant.builder()
             .name("Casa do Chef")
             .address("Rua A, 123")
             .cuisineType("Brasileira")
             .openingHours("10:00-22:00")
             .owner(User.builder().id(10L).build())
             .build()));
-
-    assertEquals(ErrorCode.RESTAURANT_OWNER_UNAUTHORIZED, exception.getCode());
-    assertEquals(ApiConstants.RESTAURANT_OWNER_UNAUTHORIZED, exception.getMessage());
   }
 
   @Test
   void shouldThrowExceptionWhenCreatingRestaurantWithNonExistentOwner() {
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.createRestaurant(Restaurant.builder()
+    assertThrows(RestaurantOwnerNotFoundException.class,
+        () -> createRestaurantUseCase.execute(Restaurant.builder()
             .name("Casa do Chef")
             .address("Rua A, 123")
             .cuisineType("Brasileira")
             .openingHours("10:00-22:00")
             .owner(User.builder().id(999L).build())
             .build()));
-
-    assertEquals(ErrorCode.RESTAURANT_OWNER_NOT_FOUND, exception.getCode());
-    assertEquals(ApiConstants.RESTAURANT_OWNER_NOT_FOUND, exception.getMessage());
   }
 
   @Test
@@ -179,7 +185,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.save(any(Restaurant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    Restaurant result = restaurantService.updateRestaurant(1L, updateData);
+    Restaurant result = updateRestaurantUseCase.execute(1L, updateData);
 
     assertEquals("Casa do Chef - Novo", result.getName());
     assertEquals("Rua B, 456", result.getAddress());
@@ -202,7 +208,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.save(any(Restaurant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    Restaurant result = restaurantService.updateRestaurant(1L, updateData);
+    updateRestaurantUseCase.execute(1L, updateData);
 
     ArgumentCaptor<Restaurant> captor = ArgumentCaptor.forClass(Restaurant.class);
     verify(restaurantPersistencePort).save(captor.capture());
@@ -227,7 +233,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.save(any(Restaurant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    restaurantService.updateRestaurant(1L, updateData);
+    updateRestaurantUseCase.execute(1L, updateData);
 
     ArgumentCaptor<Restaurant> captor = ArgumentCaptor.forClass(Restaurant.class);
     verify(restaurantPersistencePort).save(captor.capture());
@@ -246,22 +252,18 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(existingRestaurant));
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.updateRestaurant(1L, updateData));
-
-    assertEquals(ErrorCode.RESTAURANT_OWNER_NOT_FOUND, exception.getCode());
+    assertThrows(RestaurantOwnerNotFoundException.class,
+        () -> updateRestaurantUseCase.execute(1L, updateData));
   }
 
   @Test
   void shouldThrowExceptionWhenUpdatingNonExistentRestaurant() {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.updateRestaurant(999L, Restaurant.builder()
+    assertThrows(RestaurantNotFoundException.class,
+        () -> updateRestaurantUseCase.execute(999L, Restaurant.builder()
             .name("Casa do Chef")
             .build()));
-
-    assertEquals(ErrorCode.RESTAURANT_NOT_FOUND, exception.getCode());
   }
 
   @Test
@@ -270,7 +272,7 @@ class RestaurantServiceTest {
     Restaurant restaurant = createTestRestaurant(1L, "Casa do Chef", owner);
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(restaurant));
 
-    Restaurant result = restaurantService.getRestaurant(1L);
+    Restaurant result = getRestaurantUseCase.execute(1L);
 
     assertNotNull(result);
     assertEquals(1L, result.getId());
@@ -282,11 +284,10 @@ class RestaurantServiceTest {
   void shouldThrowExceptionWhenGettingNonExistentRestaurant() {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.getRestaurant(999L));
+    RestaurantNotFoundException ex = assertThrows(RestaurantNotFoundException.class,
+        () -> getRestaurantUseCase.execute(999L));
 
-    assertEquals(ErrorCode.RESTAURANT_NOT_FOUND, exception.getCode());
-    assertTrue(exception.getMessage().contains("999"));
+    assertTrue(ex.getMessage().contains("999"));
   }
 
   @Test
@@ -298,7 +299,7 @@ class RestaurantServiceTest {
 
     when(restaurantPersistencePort.findAll()).thenReturn(restaurants);
 
-    List<Restaurant> result = restaurantService.getRestaurants();
+    List<Restaurant> result = getRestaurantsUseCase.execute();
 
     assertEquals(2, result.size());
     assertEquals(restaurant1, result.get(0));
@@ -310,7 +311,7 @@ class RestaurantServiceTest {
   void shouldGetEmptyListWhenNoRestaurantsExist() {
     when(restaurantPersistencePort.findAll()).thenReturn(List.of());
 
-    List<Restaurant> result = restaurantService.getRestaurants();
+    List<Restaurant> result = getRestaurantsUseCase.execute();
 
     assertTrue(result.isEmpty());
     verify(restaurantPersistencePort).findAll();
@@ -322,7 +323,7 @@ class RestaurantServiceTest {
     Restaurant restaurant = createTestRestaurant(1L, "Casa do Chef", owner);
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(restaurant));
 
-    restaurantService.deleteRestaurant(1L);
+    deleteRestaurantUseCase.execute(1L);
 
     verify(restaurantPersistencePort).findById(1L);
     verify(restaurantPersistencePort).deleteById(1L);
@@ -332,9 +333,7 @@ class RestaurantServiceTest {
   void shouldThrowExceptionWhenDeletingNonExistentRestaurant() {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
-    DefaultException exception = assertThrows(DefaultException.class,
-        () -> restaurantService.deleteRestaurant(999L));
-
-    assertEquals(ErrorCode.RESTAURANT_NOT_FOUND, exception.getCode());
+    assertThrows(RestaurantNotFoundException.class,
+        () -> deleteRestaurantUseCase.execute(999L));
   }
 }

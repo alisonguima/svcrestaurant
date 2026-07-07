@@ -5,7 +5,11 @@ import com.techchallenge.restaurant.adapter.input.request.restaurant.CreateResta
 import com.techchallenge.restaurant.adapter.input.request.restaurant.UpdateRestaurantRequest;
 import com.techchallenge.restaurant.adapter.input.response.restaurant.CreateRestaurantResponse;
 import com.techchallenge.restaurant.adapter.input.response.restaurant.GetRestaurantResponse;
-import com.techchallenge.restaurant.application.port.input.RestaurantUseCase;
+import com.techchallenge.restaurant.application.port.input.restaurant.CreateRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.DeleteRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.GetRestaurantPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.GetRestaurantsPort;
+import com.techchallenge.restaurant.application.port.input.restaurant.UpdateRestaurantPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,26 +30,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Expõe as operações de CRUD de restaurantes. Cada restaurante pertence a um
- * usuário do tipo "Dono de Restaurante", validado no caso de uso.
- */
 @RestController
 @RequestMapping("/api/v1/restaurants")
 @RequiredArgsConstructor
 @Tag(name = "Restaurantes", description = "Cadastro, consulta e manutenção de restaurantes")
 public class RestaurantController {
 
-  private final RestaurantUseCase restaurantUseCase;
+  private final CreateRestaurantPort createRestaurantUseCase;
+  private final UpdateRestaurantPort updateRestaurantUseCase;
+  private final GetRestaurantPort getRestaurantUseCase;
+  private final GetRestaurantsPort getRestaurantsUseCase;
+  private final DeleteRestaurantPort deleteRestaurantUseCase;
 
-  /**
-   * Cadastra um novo restaurante vinculado a um usuário dono.
-   */
   @Operation(summary = "Criar restaurante")
   @ApiResponses({
       @ApiResponse(responseCode = "201", description = "Restaurante criado com sucesso"),
       @ApiResponse(responseCode = "400", description = "Dados de requisição inválidos"),
-      @ApiResponse(responseCode = "403", description = "Dono informado não é do tipo \"Dono de Restaurante\""),
+      @ApiResponse(responseCode = "403", description = "Dono informado não é do tipo \"Dono\""),
       @ApiResponse(responseCode = "404", description = "Usuário dono não encontrado"),
       @ApiResponse(responseCode = "422", description = "Já existe um restaurante com o mesmo nome")
   })
@@ -53,62 +54,55 @@ public class RestaurantController {
   public ResponseEntity<CreateRestaurantResponse> create(@Valid @RequestBody CreateRestaurantRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(RestaurantWebMapper.INSTANCE.domainToCreateResponse(
-            restaurantUseCase.createRestaurant(RestaurantWebMapper.INSTANCE.createRequestToDomain(request))));
+            createRestaurantUseCase.execute(
+                RestaurantWebMapper.INSTANCE.createRequestToDomain(request))));
   }
 
-  /**
-   * Busca um restaurante pelo seu identificador.
-   */
   @Operation(summary = "Buscar restaurante por id")
   @ApiResponses({
       @ApiResponse(responseCode = "200", description = "Restaurante encontrado"),
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<GetRestaurantResponse> get(@Parameter(description = "Id do restaurante") @PathVariable Long id) {
-    return ResponseEntity.ok(RestaurantWebMapper.INSTANCE.domainToGetResponse(restaurantUseCase.getRestaurant(id)));
+  public ResponseEntity<GetRestaurantResponse> get(
+      @Parameter(description = "Id do restaurante") @PathVariable Long id) {
+    return ResponseEntity.ok(
+        RestaurantWebMapper.INSTANCE.domainToGetResponse(getRestaurantUseCase.execute(id)));
   }
 
-  /**
-   * Lista todos os restaurantes cadastrados.
-   */
   @Operation(summary = "Listar restaurantes")
   @ApiResponse(responseCode = "200", description = "Lista de restaurantes")
   @GetMapping
   public ResponseEntity<List<GetRestaurantResponse>> getAll() {
-    return ResponseEntity.ok(restaurantUseCase.getRestaurants().stream()
+    return ResponseEntity.ok(getRestaurantsUseCase.execute().stream()
         .map(RestaurantWebMapper.INSTANCE::domainToGetResponse)
         .toList());
   }
 
-  /**
-   * Atualiza parcialmente os dados de um restaurante, incluindo a possibilidade
-   * de transferir a titularidade para outro usuário dono.
-   */
-  @Operation(summary = "Atualizar restaurante", description = "Atualização parcial dos dados do restaurante.")
+  @Operation(summary = "Atualizar restaurante")
   @ApiResponses({
       @ApiResponse(responseCode = "200", description = "Restaurante atualizado com sucesso"),
       @ApiResponse(responseCode = "400", description = "Dados de requisição inválidos"),
       @ApiResponse(responseCode = "404", description = "Restaurante ou dono não encontrado")
   })
   @PatchMapping("/{id}")
-  public ResponseEntity<CreateRestaurantResponse> update(@Parameter(description = "Id do restaurante") @PathVariable Long id,
-                                                          @Valid @RequestBody UpdateRestaurantRequest request) {
+  public ResponseEntity<CreateRestaurantResponse> update(
+      @Parameter(description = "Id do restaurante") @PathVariable Long id,
+      @Valid @RequestBody UpdateRestaurantRequest request) {
     return ResponseEntity.ok(RestaurantWebMapper.INSTANCE.domainToCreateResponse(
-        restaurantUseCase.updateRestaurant(id, RestaurantWebMapper.INSTANCE.updateRequestToDomain(request))));
+        updateRestaurantUseCase.execute(id,
+            RestaurantWebMapper.INSTANCE.updateRequestToDomain(request))));
   }
 
-  /**
-   * Remove um restaurante pelo seu identificador.
-   */
   @Operation(summary = "Excluir restaurante")
   @ApiResponses({
       @ApiResponse(responseCode = "204", description = "Restaurante removido com sucesso"),
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
   })
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@Parameter(description = "Id do restaurante") @PathVariable Long id) {
-    restaurantUseCase.deleteRestaurant(id);
+  public ResponseEntity<Void> delete(
+      @Parameter(description = "Id do restaurante") @PathVariable Long id) {
+    deleteRestaurantUseCase.execute(id);
     return ResponseEntity.noContent().build();
   }
 }

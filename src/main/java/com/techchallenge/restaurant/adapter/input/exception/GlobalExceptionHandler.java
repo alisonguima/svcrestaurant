@@ -2,8 +2,16 @@ package com.techchallenge.restaurant.adapter.input.exception;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.techchallenge.restaurant.application.exception.DefaultException;
-import com.techchallenge.restaurant.application.exception.ErrorCode;
+import com.techchallenge.restaurant.application.exception.BaseException;
+import com.techchallenge.restaurant.application.exception.MenuItemOwnerUnauthorizedException;
+import com.techchallenge.restaurant.application.exception.MenuItemNotFoundException;
+import com.techchallenge.restaurant.application.exception.MenuItemRestaurantNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerNotFoundException;
+import com.techchallenge.restaurant.application.exception.RestaurantOwnerUnauthorizedException;
+import com.techchallenge.restaurant.application.exception.UserNotFoundException;
+import com.techchallenge.restaurant.application.exception.UserTypeInUseException;
+import com.techchallenge.restaurant.application.exception.UserTypeNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -41,7 +49,7 @@ public class GlobalExceptionHandler {
             error -> Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value"),
             (existing, duplicate) -> existing));
 
-    log.warn("handleValidation - Validation failed: fields={}", fieldErrors.keySet());
+    log.warn("handleValidation - fields={}", fieldErrors.keySet());
 
     ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
     problemDetail.setType(URI.create(ErrorResponseConstants.PROBLEM_DETAIL_TYPE_BASE + ErrorResponseConstants.ERROR_TYPE_VALIDATION));
@@ -51,16 +59,14 @@ public class GlobalExceptionHandler {
     problemDetail.setProperty("errors", fieldErrors);
     problemDetail.setProperty("timestamp", problemDetailTimestamp());
 
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(problemDetail);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ProblemDetail> handleNotReadable(
       HttpMessageNotReadableException ex, WebRequest request) {
 
-    log.warn("handleNotReadable - Invalid request body: message={}", ex.getMessage());
+    log.warn("handleNotReadable - message={}", ex.getMessage());
 
     String detail = resolveNotReadableDetail(ex);
 
@@ -71,35 +77,28 @@ public class GlobalExceptionHandler {
     problemDetail.setInstance(URI.create(request.getDescription(false).replace("uri=", "")));
     problemDetail.setProperty("timestamp", problemDetailTimestamp());
 
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(problemDetail);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
   }
 
-  @ExceptionHandler(DefaultException.class)
-  public ResponseEntity<ProblemDetail> handleBusiness(
-      DefaultException ex, WebRequest request) {
+  @ExceptionHandler(BaseException.class)
+  public ResponseEntity<ProblemDetail> handleBusiness(BaseException ex, WebRequest request) {
+    log.warn("handleBusiness - code={}, message={}", ex.getCode(), ex.getMessage());
 
-    log.warn("handleBusiness - Business error: code={}, message={}", ex.getCode(), ex.getMessage());
+    HttpStatus status = resolveStatus(ex);
 
-    ErrorSpec errorSpec = resolveErrorSpec(ex.getCode());
-    ProblemDetail problemDetail = ProblemDetail.forStatus(errorSpec.status());
-    problemDetail.setType(URI.create(ErrorResponseConstants.PROBLEM_DETAIL_TYPE_BASE + errorSpec.type()));
-    problemDetail.setTitle(errorSpec.title());
+    ProblemDetail problemDetail = ProblemDetail.forStatus(status);
+    problemDetail.setType(URI.create(ErrorResponseConstants.PROBLEM_DETAIL_TYPE_BASE + ex.getCode().toLowerCase().replace('_', '-')));
+    problemDetail.setTitle(ex.getCode());
     problemDetail.setDetail(ex.getMessage());
     problemDetail.setInstance(URI.create(request.getDescription(false).replace("uri=", "")));
     problemDetail.setProperty("timestamp", problemDetailTimestamp());
 
-    return ResponseEntity
-        .status(errorSpec.status())
-        .body(problemDetail);
+    return ResponseEntity.status(status).body(problemDetail);
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ProblemDetail> handleGeneric(
-      Exception ex, WebRequest request) {
-
-    log.error("handleGeneric - Unexpected error: message={}", ex.getMessage(), ex);
+  public ResponseEntity<ProblemDetail> handleGeneric(Exception ex, WebRequest request) {
+    log.error("handleGeneric - message={}", ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
     problemDetail.setType(URI.create(ErrorResponseConstants.PROBLEM_DETAIL_TYPE_BASE + ErrorResponseConstants.ERROR_TYPE_INTERNAL_SERVER));
@@ -108,74 +107,39 @@ public class GlobalExceptionHandler {
     problemDetail.setInstance(URI.create(request.getDescription(false).replace("uri=", "")));
     problemDetail.setProperty("timestamp", problemDetailTimestamp());
 
-    return ResponseEntity
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(problemDetail);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
   }
 
-  private ErrorSpec resolveErrorSpec(ErrorCode code) {
-    return switch (code) {
-      case EMAIL_ALREADY_EXISTS, LOGIN_ALREADY_EXISTS ->
-          new ErrorSpec(HttpStatus.UNPROCESSABLE_ENTITY,
-              ErrorResponseConstants.ERROR_TYPE_DUPLICATE_RESOURCE,
-              ErrorResponseConstants.ERROR_TITLE_DUPLICATE_RESOURCE);
-      case USER_NOT_FOUND ->
-          new ErrorSpec(HttpStatus.NOT_FOUND,
-              ErrorResponseConstants.ERROR_TYPE_RESOURCE_NOT_FOUND,
-              ErrorResponseConstants.ERROR_TITLE_RESOURCE_NOT_FOUND);
-      case INVALID_PASSWORD ->
-          new ErrorSpec(HttpStatus.UNPROCESSABLE_ENTITY,
-              ErrorResponseConstants.ERROR_TYPE_CONFLICT,
-              ErrorResponseConstants.ERROR_TITLE_UNPROCESSABLE_ENTITY);
-      case USER_TYPE_NOT_FOUND ->
-          new ErrorSpec(HttpStatus.NOT_FOUND,
-              ErrorResponseConstants.ERROR_TYPE_RESOURCE_NOT_FOUND,
-              ErrorResponseConstants.ERROR_TITLE_RESOURCE_NOT_FOUND);
-      case USER_TYPE_INVALID_NAME ->
-          new ErrorSpec(HttpStatus.UNPROCESSABLE_ENTITY,
-              ErrorResponseConstants.ERROR_TYPE_INVALID_REQUEST,
-              ErrorResponseConstants.ERROR_TITLE_INVALID_REQUEST);
-      case USER_TYPE_ALREADY_EXISTS, RESTAURANT_ALREADY_EXISTS, MENU_ITEM_ALREADY_EXISTS ->
-          new ErrorSpec(HttpStatus.UNPROCESSABLE_ENTITY,
-              ErrorResponseConstants.ERROR_TYPE_DUPLICATE_RESOURCE,
-              ErrorResponseConstants.ERROR_TITLE_DUPLICATE_RESOURCE);
-      case USER_TYPE_IN_USE ->
-          new ErrorSpec(HttpStatus.CONFLICT,
-              ErrorResponseConstants.ERROR_TYPE_CONFLICT,
-              ErrorResponseConstants.ERROR_TITLE_CONFLICT);
-      case RESTAURANT_NOT_FOUND, RESTAURANT_OWNER_NOT_FOUND, MENU_ITEM_NOT_FOUND, MENU_ITEM_RESTAURANT_NOT_FOUND ->
-          new ErrorSpec(HttpStatus.NOT_FOUND,
-              ErrorResponseConstants.ERROR_TYPE_RESOURCE_NOT_FOUND,
-              ErrorResponseConstants.ERROR_TITLE_RESOURCE_NOT_FOUND);
-      case RESTAURANT_OWNER_UNAUTHORIZED ->
-          new ErrorSpec(HttpStatus.FORBIDDEN,
-              ErrorResponseConstants.ERROR_TYPE_FORBIDDEN,
-              ErrorResponseConstants.ERROR_TITLE_FORBIDDEN);
+  private static HttpStatus resolveStatus(BaseException ex) {
+    return switch (ex) {
+      case UserNotFoundException e             -> HttpStatus.NOT_FOUND;
+      case UserTypeNotFoundException e         -> HttpStatus.NOT_FOUND;
+      case RestaurantNotFoundException e       -> HttpStatus.NOT_FOUND;
+      case RestaurantOwnerNotFoundException e  -> HttpStatus.NOT_FOUND;
+      case MenuItemNotFoundException e         -> HttpStatus.NOT_FOUND;
+      case MenuItemRestaurantNotFoundException e -> HttpStatus.NOT_FOUND;
+      case RestaurantOwnerUnauthorizedException e -> HttpStatus.FORBIDDEN;
+      case MenuItemOwnerUnauthorizedException e   -> HttpStatus.FORBIDDEN;
+      case UserTypeInUseException e            -> HttpStatus.CONFLICT;
+      default                                  -> HttpStatus.UNPROCESSABLE_ENTITY;
     };
   }
 
   private String resolveNotReadableDetail(HttpMessageNotReadableException ex) {
     Throwable cause = ex.getCause();
-
     if (cause instanceof InvalidFormatException invalidFormatException) {
-      String fieldName = resolveFieldName(invalidFormatException);
+      String fieldName = invalidFormatException.getPath().stream()
+          .map(JsonMappingException.Reference::getFieldName)
+          .filter(Objects::nonNull)
+          .findFirst()
+          .orElse("unknown");
 
       if (ErrorResponseConstants.FIELD_USER_TYPE_ID.equals(fieldName)) {
         return "Invalid userTypeId value";
       }
-
       return "Invalid value for field: " + fieldName;
     }
-
     return "Invalid request body";
-  }
-
-  private String resolveFieldName(InvalidFormatException exception) {
-    return exception.getPath().stream()
-        .map(JsonMappingException.Reference::getFieldName)
-        .filter(Objects::nonNull)
-        .findFirst()
-        .orElse("unknown");
   }
 
   private String problemDetailTimestamp() {
@@ -183,6 +147,4 @@ public class GlobalExceptionHandler {
         .withResolverStyle(ResolverStyle.STRICT);
     return ZonedDateTime.now(UTC).format(formatter);
   }
-
-  private record ErrorSpec(HttpStatus status, String type, String title) {}
 }

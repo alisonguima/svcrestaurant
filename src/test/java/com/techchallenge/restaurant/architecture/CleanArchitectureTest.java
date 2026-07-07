@@ -33,7 +33,6 @@ class CleanArchitectureTest {
         .that().resideInAPackage("..application.domain..")
         .should().dependOnClassesThat().resideInAnyPackage(
             "..application.port..",
-            "..application.service..",
             "..adapter..",
             "..config..");
 
@@ -91,10 +90,20 @@ class CleanArchitectureTest {
   }
 
   @Test
-  void inputPortImplementationsMustResideInApplicationService() {
-    ArchRule rule = classes()
-        .that().implement(JavaClass.Predicates.resideInAPackage("..application.port.input.."))
-        .should().resideInAPackage("..application.service..");
+  void useCasesMustNotDependOnSpring() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..application.usecase..")
+        .should().dependOnClassesThat()
+        .resideInAnyPackage("org.springframework..", "jakarta.persistence..", "javax.persistence..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  void controllersMustDependOnInputPortsNotUseCasesDirectly() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..adapter.input.controller..")
+        .should().dependOnClassesThat().resideInAPackage("..application.usecase..");
 
     rule.check(classes);
   }
@@ -121,8 +130,8 @@ class CleanArchitectureTest {
     layeredArchitecture()
         .consideringOnlyDependenciesInLayers()
         .layer("Domain").definedBy("..application.domain..")
-        .layer("Application").definedBy("..application.port..", "..application.service..",
-            "..application.mapper..", "..application.exception..", "..application.util..")
+        .layer("Application").definedBy("..application.port..", "..application.usecase..",
+            "..application.exception..")
         .layer("Adapter").definedBy("..adapter..")
         .layer("Config").definedBy("..config..")
 

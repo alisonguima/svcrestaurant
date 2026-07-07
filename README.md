@@ -21,42 +21,41 @@ O sistema permite que **Donos de Restaurante** cadastrem seus estabelecimentos e
 O projeto segue **Clean/Hexagonal Architecture**, com o domínio isolado de frameworks e da infraestrutura. As regras de dependência entre camadas são **validadas automaticamente por testes ArchUnit** (`src/test/java/.../architecture/CleanArchitectureTest.java`):
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                              Config                               │
-│           (SecurityConfig, UseCaseConfig - fiação/DI)              │
-└───────────────────────────────┬────────────────────────────────────┘
-                                 │
-┌───────────────────────────────▼────────────────────────────────────┐
-│                             Adapter                                 │
-│  Input                                    Output                    │
-│  ├─ controller  (REST controllers)        ├─ postgres (JPA/Repos)   │
-│  ├─ request/response (DTOs)               ├─ security (BCrypt)      │
-│  ├─ mapper   (Web ↔ Domínio)              ├─ time (relógio UTC)     │
-│  ├─ exception (GlobalExceptionHandler)    └─ transaction (Spring TX)│
-│  └─ validation                                                       │
-└───────────────────────────────┬────────────────────────────────────┘
-                                 │
-┌───────────────────────────────▼────────────────────────────────────┐
-│                            Application                              │
-│  ├─ port.input   (casos de uso / interfaces)                        │
-│  ├─ port.output  (portas de persistência, transação, tempo, senha)  │
-│  ├─ service      (implementação dos casos de uso)                   │
-│  ├─ mapper       (mapeamento entre entidades de domínio)             │
-│  ├─ exception / util                                                 │
-└───────────────────────────────┬────────────────────────────────────┘
-                                 │
-┌───────────────────────────────▼────────────────────────────────────┐
-│                              Domain                                  │
-│        User, Restaurant, MenuItem, UserType (POJOs puros,           │
-│        sem anotações de framework ou de persistência)                │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                               Config                                  │
+│  UserUseCaseConfig, UserTypeUseCaseConfig, RestaurantUseCaseConfig,   │
+│  MenuItemUseCaseConfig, SecurityConfig  —  composição de dependências │
+└────────────────────────────────┬─────────────────────────────────────┘
+                                  │
+┌────────────────────────────────▼─────────────────────────────────────┐
+│                              Adapter                                   │
+│  Input                                     Output                      │
+│  ├─ controller  (REST — injeta port.input) ├─ postgres (JPA/Repos)    │
+│  ├─ request/response (DTOs)                ├─ security (BCrypt)        │
+│  ├─ mapper   (Web ↔ Domínio)               ├─ time (relógio UTC)       │
+│  ├─ exception (GlobalExceptionHandler)     └─ transaction (Spring TX)  │
+│  └─ validation                                                          │
+└────────────────────────────────┬─────────────────────────────────────┘
+                                  │
+┌────────────────────────────────▼─────────────────────────────────────┐
+│                            Application                                 │
+│  ├─ port.input   (interfaces de entrada: CreateUserPort, etc.)        │
+│  ├─ port.output  (portas de saída: persistência, transação, senha…)   │
+│  ├─ usecase      (implementações — POJOs puros, sem Spring)           │
+│  ├─ exception    (hierarquia BaseException → 16 exceções tipadas)     │
+│  └─ domain       (entidades ricas: User, Restaurant, MenuItem…)       │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-Regras impostas pelos testes de arquitetura:
+> **Regra de dependência:** as setas apontam sempre para dentro. `Config` conhece tudo; `Domain` não conhece ninguém.
 
-- O **domínio** (`application.domain`) não pode depender de `port`, `service`, `adapter` ou `config`, nem de anotações Spring/JPA.
+Regras impostas pelos testes de arquitetura (11 verificações no build):
+
+- O **domínio** não pode depender de `port`, `adapter` ou `config`, nem de anotações Spring/JPA.
 - A **camada de aplicação** não pode depender de `adapter` nem de `config`.
-- **Controllers** não podem acessar adapters de saída (`adapter.output`) nem `service` diretamente — apenas os `port.input` (casos de uso).
+- **Use cases** não podem depender de Spring, Jakarta Persistence ou qualquer framework.
+- **Controllers** não podem referenciar `usecase` diretamente — apenas as interfaces `port.input`.
+- Implementações de **output ports** devem residir em `adapter.output`.
 - Entidades JPA (`@Entity`) só podem existir em `adapter.output.postgres.model`.
 - As camadas não podem ter dependências cíclicas.
 
@@ -80,33 +79,42 @@ Regras impostas pelos testes de arquitetura:
 com.techchallenge.restaurant
 ├── adapter
 │   ├── input
-│   │   ├── controller     # REST controllers (User, UserType, Restaurant, MenuItem)
-│   │   ├── request/response
-│   │   ├── mapper         # MapStruct: request/response ↔ domínio
-│   │   ├── exception       # GlobalExceptionHandler (RFC 7807 / ProblemDetail)
+│   │   ├── controller        # REST controllers — dependem de port.input
+│   │   ├── request/response  # DTOs de entrada e saída
+│   │   ├── mapper             # MapStruct: request/response ↔ domínio
+│   │   ├── exception          # GlobalExceptionHandler (RFC 7807 / ProblemDetail)
 │   │   └── validation
 │   └── output
-│       ├── postgres        # Entities, Repositories JPA, mapeamento persistência
-│       ├── security         # BCryptPasswordEncryptionAdapter
-│       ├── time             # UtcDateTimeProvider
-│       └── transaction      # SpringTransactionAdapter
+│       ├── postgres           # @Entity, Spring Data Repositories, mappers JPA ↔ domínio
+│       ├── security           # BCryptPasswordEncryptionAdapter
+│       ├── time               # UtcDateTimeProvider
+│       └── transaction        # SpringTransactionAdapter
 ├── application
-│   ├── domain              # Entidades de domínio puras (User, Restaurant, MenuItem, UserType)
-│   ├── port.input           # Casos de uso (interfaces)
-│   ├── port.output          # Portas de persistência, transação, senha, data/hora
-│   ├── service              # Implementação dos casos de uso
-│   ├── mapper                # Mapeamento entre entidades de domínio
-│   ├── exception / util
-├── config                   # SecurityConfig, UseCaseConfig (injeção de dependência dos ports)
+│   ├── domain                 # Entidades ricas (User, Restaurant, MenuItem, UserType)
+│   ├── port
+│   │   ├── input              # Interfaces de entrada por agregado
+│   │   │   ├── user           # CreateUserPort, UpdateUserPort, GetUserPort…
+│   │   │   ├── usertype       # CreateUserTypePort, DeleteUserTypePort…
+│   │   │   ├── restaurant     # CreateRestaurantPort, GetRestaurantsPort…
+│   │   │   └── menuitem       # CreateMenuItemPort, UpdateMenuItemPort…
+│   │   └── output             # UserPersistencePort, TransactionPort, DateTimeProviderPort…
+│   ├── usecase                # Implementações — POJOs sem anotações de framework
+│   │   ├── user               # CreateUserUseCase, UpdateUserUseCase…
+│   │   ├── usertype
+│   │   ├── restaurant
+│   │   └── menuitem
+│   └── exception              # BaseException + 16 exceções tipadas
+├── config                     # UserUseCaseConfig, UserTypeUseCaseConfig,
+│                              # RestaurantUseCaseConfig, MenuItemUseCaseConfig, SecurityConfig
 └── RestaurantApplication.java
 ```
 
 ## Regras de negócio
 
 - **Usuários** possuem `login` e `email` únicos; senha exigida no cadastro e validada por padrão definido em `InputValidationConstants`.
-- **Tipos de usuário** (`UserType`) aceitam apenas os valores `"Dono de Restaurante"` e `"Cliente"`; nomes duplicados (case-insensitive) são rejeitados.
+- **Tipos de usuário** (`UserType`) aceitam apenas os valores `"Dono"` e `"Cliente"`; nomes duplicados (case-insensitive) são rejeitados.
 - Um tipo de usuário **não pode ser excluído** enquanto houver usuários associados a ele (`USER_TYPE_IN_USE`).
-- Um **restaurante** só pode ser criado se o `ownerUserId` informado existir e possuir o tipo `"Dono de Restaurante"` (caso contrário, `RESTAURANT_OWNER_UNAUTHORIZED`).
+- Um **restaurante** só pode ser criado se o `ownerUserId` informado existir e possuir o tipo `"Dono"` (caso contrário, `RESTAURANT_OWNER_UNAUTHORIZED`).
 - Nomes de restaurante são únicos (case-insensitive).
 - **Itens de cardápio** pertencem sempre a um restaurante (`/restaurants/{restaurantId}/menu-items`) e exigem preço mínimo de `0.01`.
 
@@ -127,13 +135,13 @@ Prefixo base: `/api/v1` (mais o `context-path` configurado — ver [Configuraç�
 
 ### Tipos de usuário — `/api/v1/user-types`
 
-| Método | Caminho                        | Descrição                                          |
-|--------|----------------------------------|------------------------------------------------------|
-| POST   | `/api/v1/user-types`             | Cria um tipo de usuário (`"Dono de Restaurante"` ou `"Cliente"`) |
-| GET    | `/api/v1/user-types/{id}`        | Busca por id                                          |
-| GET    | `/api/v1/user-types`             | Lista todos                                           |
-| PATCH  | `/api/v1/user-types/{id}`        | Atualiza o nome                                        |
-| DELETE | `/api/v1/user-types/{id}`        | Remove (bloqueado se houver usuários vinculados)       |
+| Método | Caminho                        | Descrição                                         |
+|--------|----------------------------------|---------------------------------------------------|
+| POST   | `/api/v1/user-types`             | Cria um tipo de usuário (`"Dono"` ou `"Cliente"`) |
+| GET    | `/api/v1/user-types/{id}`        | Busca por id                                      |
+| GET    | `/api/v1/user-types`             | Lista todos                                       |
+| PATCH  | `/api/v1/user-types/{id}`        | Atualiza o nome                                    |
+| DELETE | `/api/v1/user-types/{id}`        | Remove (bloqueado se houver usuários vinculados)   |
 
 ### Restaurantes — `/api/v1/restaurants`
 
@@ -147,13 +155,15 @@ Prefixo base: `/api/v1` (mais o `context-path` configurado — ver [Configuraç�
 
 ### Itens de cardápio — `/api/v1/restaurants/{restaurantId}/menu-items`
 
-| Método | Caminho                                                  | Descrição                        | Corpo da requisição                                                  |
-|--------|-------------------------------------------------------------|--------------------------------------|--------------------------------------------------------------------------|
-| POST   | `/api/v1/restaurants/{restaurantId}/menu-items`              | Cria um item de cardápio             | `name, description, price, onlyAtRestaurant, photoPath`                  |
-| GET    | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Busca item por id                    | —                                                                          |
-| GET    | `/api/v1/restaurants/{restaurantId}/menu-items`              | Lista itens do restaurante           | —                                                                          |
-| PATCH  | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Atualiza um item                     | `name?, description?, price?, onlyAtRestaurant?, photoPath?`             |
-| DELETE | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Remove um item                       | —                                                                          |
+| Método | Caminho                                                  | Descrição                        | Corpo / parâmetros                                                             |
+|--------|-------------------------------------------------------------|--------------------------------------|--------------------------------------------------------------------------------|
+| POST   | `/api/v1/restaurants/{restaurantId}/menu-items`              | Cria um item de cardápio             | `name, description, price, onlyAtRestaurant, photoPath, ownerId`               |
+| GET    | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Busca item por id                    | —                                                                               |
+| GET    | `/api/v1/restaurants/{restaurantId}/menu-items`              | Lista itens do restaurante           | —                                                                               |
+| PATCH  | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Atualiza um item                     | `name?, description?, price?, onlyAtRestaurant?, photoPath?, ownerId`          |
+| DELETE | `/api/v1/restaurants/{restaurantId}/menu-items/{id}`         | Remove um item                       | query param: `ownerId`                                                          |
+
+> `ownerId` identifica o dono do restaurante. Operações de escrita em itens de cardápio são rejeitadas com `403` se o `ownerId` não corresponder ao dono cadastrado do restaurante.
 
 > Uma coleção Postman pronta para uso está disponível na raiz do repositório: `Restaurant.postman_collection.json` (e o ambiente `dev.postman_environment.json`).
 
@@ -163,14 +173,14 @@ Todas as respostas de erro seguem o padrão **RFC 7807 (`application/problem+jso
 
 Principais códigos de negócio e seus status HTTP:
 
-| Status | Situações                                                                                  |
-|--------|-----------------------------------------------------------------------------------------------|
-| 400    | Corpo de requisição inválido ou falha de validação de campos (Bean Validation)                 |
-| 403    | `RESTAURANT_OWNER_UNAUTHORIZED` — usuário informado não é `"Dono de Restaurante"`               |
-| 404    | Usuário, tipo de usuário, restaurante, item de cardápio ou dono não encontrados                |
-| 409    | `USER_TYPE_IN_USE` — tentativa de excluir um tipo de usuário em uso                             |
-| 422    | E-mail/login/nome duplicado, senha inválida, nome de tipo de usuário não permitido             |
-| 500    | Erro interno inesperado                                                                          |
+| Status | Situações                                                                              |
+|--------|-------------------------------------------------------------------------------------------|
+| 400    | Corpo de requisição inválido ou falha de validação de campos (Bean Validation)             |
+| 403    | `RESTAURANT_OWNER_UNAUTHORIZED` — usuário informado não é `"Dono"`               |
+| 404    | Usuário, tipo de usuário, restaurante, item de cardápio ou dono não encontrados            |
+| 409    | `USER_TYPE_IN_USE` — tentativa de excluir um tipo de usuário em uso                         |
+| 422    | E-mail/login/nome duplicado, senha inválida, nome de tipo de usuário não permitido         |
+| 500    | Erro interno inesperado                                                                      |
 
 ## Configuração e execução
 
@@ -227,8 +237,11 @@ Gera o jar executável em `target/restaurant-*.jar`.
 mvn test
 ```
 
-- Testes unitários e de integração de controllers/services usam **H2** em memória.
-- `CleanArchitectureTest` valida as regras de dependência entre camadas com **ArchUnit**.
+- Testes unitários e de integração de controllers usam **H2** em memória; os controllers são testados via `@WebMvcTest` com `@MockBean` das interfaces `port.input`.
+- `CleanArchitectureTest` valida **11 regras** de dependência entre camadas com **ArchUnit**, incluindo:
+  - use cases não podem depender de Spring/JPA
+  - controllers não podem referenciar `usecase` diretamente (apenas `port.input`)
+- O projeto possui atualmente **166 testes**, todos passando (`BUILD SUCCESS`).
 - O plugin **JaCoCo** gera relatório de cobertura em `target/site/jacoco/index.html` após a execução dos testes.
 
 ## Documentação interativa (Swagger)

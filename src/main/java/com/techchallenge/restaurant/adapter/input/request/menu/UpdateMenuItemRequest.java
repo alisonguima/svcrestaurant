@@ -1,21 +1,13 @@
 package com.techchallenge.restaurant.adapter.input.request.menu;
 
+import com.techchallenge.restaurant.adapter.input.validation.InputValidationConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-/**
- * Dados para atualização parcial de um item de cardápio. Todos os campos são
- * opcionais; apenas os informados são alterados.
- *
- * @param name             novo nome do item
- * @param description      nova descrição do item
- * @param price            novo preço do item, mínimo de 0.01
- * @param onlyAtRestaurant se o item só pode ser consumido no local
- * @param photoPath        novo caminho/URL da foto do item
- */
 public record UpdateMenuItemRequest(
     @Schema(description = "Novo nome do item de cardápio", example = "Risoto de Camarão")
     @Size(min = 2, max = 120)
@@ -34,4 +26,8 @@ public record UpdateMenuItemRequest(
 
     @Schema(description = "Novo caminho ou URL da foto do item")
     @Size(max = 255)
-    String photoPath) {}
+    String photoPath,
+
+    @Schema(description = "Id do dono do restaurante (deve ser o proprietário)")
+    @NotNull(message = InputValidationConstants.MENU_ITEM_OWNER_REQUIRED)
+    Long ownerId) {}
