@@ -52,15 +52,9 @@ class RestaurantControllerTest {
   private DeleteRestaurantPort deleteRestaurantUseCase;
 
   private Restaurant restaurantDomain() {
-    return Restaurant.builder()
-        .id(7L)
-        .name("Casa do Chef")
-        .address("Rua A, 123")
-        .cuisineType("Brasileira")
-        .openingHours("10:00-22:00")
-        .owner(User.builder().id(2L).name("Joao").build())
-        .lastUpdateAt(ZonedDateTime.parse("2026-07-03T15:00:00Z"))
-        .build();
+    return new Restaurant(7L, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00",
+        new User(2L, "Joao", null, null, null, null, null),
+        ZonedDateTime.parse("2026-07-03T15:00:00Z"));
   }
 
   @Test

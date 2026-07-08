@@ -53,16 +53,10 @@ class MenuItemControllerTest {
   private DeleteMenuItemPort deleteMenuItemUseCase;
 
   private MenuItem menuItemDomain() {
-    return MenuItem.builder()
-        .id(11L)
-        .name("Picanha")
-        .description("Picanha na brasa")
-        .price(BigDecimal.valueOf(79.9))
-        .onlyAtRestaurant(true)
-        .photoPath("/tmp/picanha.jpg")
-        .restaurant(Restaurant.builder().id(7L).name("Casa do Chef").build())
-        .lastUpdateAt(ZonedDateTime.parse("2026-07-03T15:00:00Z"))
-        .build();
+    return new MenuItem(11L, "Picanha", "Picanha na brasa", BigDecimal.valueOf(79.9), true,
+        "/tmp/picanha.jpg",
+        new Restaurant(7L, "Casa do Chef", null, null, null, null, null),
+        ZonedDateTime.parse("2026-07-03T15:00:00Z"));
   }
 
   @Test

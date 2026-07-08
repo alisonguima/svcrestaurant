@@ -50,7 +50,7 @@ class UserTypeControllerTest {
   private DeleteUserTypePort deleteUserTypeUseCase;
 
   private UserType cliente() {
-    return UserType.builder().id(1L).name(UserType.CLIENTE).build();
+    return new UserType(1L, UserType.CLIENTE);
   }
 
   @Test
@@ -79,7 +79,7 @@ class UserTypeControllerTest {
   void getAll_shouldReturn200WithList() throws Exception {
     when(getUserTypesUseCase.execute()).thenReturn(List.of(
         cliente(),
-        UserType.builder().id(2L).name(UserType.DONO).build()
+        new UserType(2L, UserType.DONO)
     ));
 
     mockMvc.perform(get("/api/v1/user-types"))
@@ -92,7 +92,7 @@ class UserTypeControllerTest {
   @Test
   void update_shouldReturn200WithBody() throws Exception {
     when(updateUserTypeUseCase.execute(anyLong(), any(UserType.class)))
-        .thenReturn(UserType.builder().id(1L).name(UserType.DONO).build());
+        .thenReturn(new UserType(1L, UserType.DONO));
 
     mockMvc.perform(patch("/api/v1/user-types/1")
             .contentType(MediaType.APPLICATION_JSON)

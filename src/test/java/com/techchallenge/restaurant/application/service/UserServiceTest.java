@@ -87,31 +87,17 @@ class UserServiceTest {
   }
 
   private UserType createUserType(Long id, String name) {
-    return UserType.builder().id(id).name(name).build();
+    return new UserType(id, name);
   }
 
   private User createTestUser(Long id, String name, String email, String login, UserType userType) {
-    return User.builder()
-        .id(id)
-        .name(name)
-        .email(email)
-        .login(login)
-        .password("encodedPassword")
-        .userType(userType)
-        .lastUpdateAt(NOW)
-        .build();
+    return new User(id, name, email, login, "encodedPassword", userType, NOW);
   }
 
   @Test
   void shouldCreateUserSuccessfully() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
-    User user = User.builder()
-        .name("João Silva")
-        .email("joao@email.com")
-        .login("joao.silva")
-        .password("Senha@123")
-        .userType(userType)
-        .build();
+    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(false);
@@ -139,13 +125,7 @@ class UserServiceTest {
   @Test
   void shouldThrowExceptionWhenCreatingUserWithDuplicateEmail() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
-    User user = User.builder()
-        .name("João Silva")
-        .email("joao@email.com")
-        .login("joao.silva")
-        .password("Senha@123")
-        .userType(userType)
-        .build();
+    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(true);
 
@@ -156,13 +136,7 @@ class UserServiceTest {
   @Test
   void shouldThrowExceptionWhenCreatingUserWithDuplicateLogin() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
-    User user = User.builder()
-        .name("João Silva")
-        .email("joao@email.com")
-        .login("joao.silva")
-        .password("Senha@123")
-        .userType(userType)
-        .build();
+    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(true);
@@ -174,13 +148,7 @@ class UserServiceTest {
   @Test
   void shouldThrowExceptionWhenCreatingUserWithNonExistentUserType() {
     UserType userType = createUserType(999L, UserType.CLIENTE);
-    User user = User.builder()
-        .name("João Silva")
-        .email("joao@email.com")
-        .login("joao.silva")
-        .password("Senha@123")
-        .userType(userType)
-        .build();
+    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(false);
@@ -194,12 +162,7 @@ class UserServiceTest {
   void shouldUpdateUserSuccessfully() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .name("João Silva Atualizado")
-        .email("joao.novo@email.com")
-        .login("joao.silva.novo")
-        .userType(userType)
-        .build();
+    User updateData = new User(null, "João Silva Atualizado", "joao.novo@email.com", "joao.silva.novo", null, userType, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userPersistencePort.existsByEmail("joao.novo@email.com")).thenReturn(false);
@@ -220,9 +183,7 @@ class UserServiceTest {
   void shouldUpdateUserWithPartialData() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .name("João Atualizado")
-        .build();
+    User updateData = new User(null, "João Atualizado", null, null, null, null, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -242,9 +203,7 @@ class UserServiceTest {
   void shouldThrowExceptionWhenUpdatingUserWithDuplicateEmail() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .email("outro@email.com")
-        .build();
+    User updateData = new User(null, null, "outro@email.com", null, null, null, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userPersistencePort.existsByEmail("outro@email.com")).thenReturn(true);
@@ -257,9 +216,7 @@ class UserServiceTest {
   void shouldThrowExceptionWhenUpdatingUserWithDuplicateLogin() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .login("outro.login")
-        .build();
+    User updateData = new User(null, null, null, "outro.login", null, null, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userPersistencePort.existsByLogin("outro.login")).thenReturn(true);
@@ -270,7 +227,7 @@ class UserServiceTest {
 
   @Test
   void shouldThrowExceptionWhenUpdatingNonExistentUser() {
-    User updateData = User.builder().name("Novo Nome").build();
+    User updateData = new User(null, "Novo Nome", null, null, null, null, null);
 
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
@@ -406,9 +363,7 @@ class UserServiceTest {
     UserType oldUserType = createUserType(1L, UserType.CLIENTE);
     UserType newUserType = createUserType(2L, UserType.DONO);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", oldUserType);
-    User updateData = User.builder()
-        .userType(newUserType)
-        .build();
+    User updateData = new User(null, null, null, null, null, newUserType, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userTypePersistencePort.findById(2L)).thenReturn(Optional.of(newUserType));
@@ -427,9 +382,7 @@ class UserServiceTest {
   void shouldThrowExceptionWhenUpdatingUserWithNonExistentUserType() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .userType(UserType.builder().id(999L).build())
-        .build();
+    User updateData = new User(null, null, null, null, null, new UserType(999L, null), null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
@@ -442,9 +395,7 @@ class UserServiceTest {
   void shouldUpdateUserWithEmailSameAsExisting() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .email("joao@email.com")
-        .build();
+    User updateData = new User(null, null, "joao@email.com", null, null, null, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -462,9 +413,7 @@ class UserServiceTest {
   void shouldUpdateUserWithLoginSameAsExisting() {
     UserType userType = createUserType(1L, UserType.CLIENTE);
     User existingUser = createTestUser(1L, "João", "joao@email.com", "joao.silva", userType);
-    User updateData = User.builder()
-        .login("joao.silva")
-        .build();
+    User updateData = new User(null, null, null, "joao.silva", null, null, null);
 
     when(userPersistencePort.findById(1L)).thenReturn(Optional.of(existingUser));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);

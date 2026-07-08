@@ -237,12 +237,15 @@ Gera o jar executável em `target/restaurant-*.jar`.
 mvn test
 ```
 
-- Testes unitários e de integração de controllers usam **H2** em memória; os controllers são testados via `@WebMvcTest` com `@MockBean` das interfaces `port.input`.
+- **Testes unitários** isolam cada camada com Mockito: use cases (`application.service.*Test`), adapters de persistência (`*PostgresTest`) e controllers via `@WebMvcTest` + `@MockBean` das interfaces `port.input`.
+- **Testes de integração** (`src/test/java/.../integration`) sobem o contexto Spring completo (`@SpringBootTest` + `@AutoConfigureMockMvc`) contra um banco **H2 embarcado**, exercitando o fluxo real ponta a ponta — controller → use case → JPA → banco — sem nenhum mock:
+  - `UserTypeIntegrationTest`, `RestaurantIntegrationTest`, `MenuItemIntegrationTest` cobrem o CRUD completo de cada recurso e os principais cenários de erro (404, 403, 409, 422, validação 400).
+  - Cada teste roda em uma transação revertida ao final (`@Transactional`), garantindo isolamento entre eles sem necessidade de limpeza manual do banco.
 - `CleanArchitectureTest` valida **11 regras** de dependência entre camadas com **ArchUnit**, incluindo:
   - use cases não podem depender de Spring/JPA
   - controllers não podem referenciar `usecase` diretamente (apenas `port.input`)
-- O projeto possui atualmente **166 testes**, todos passando (`BUILD SUCCESS`).
-- O plugin **JaCoCo** gera relatório de cobertura em `target/site/jacoco/index.html` após a execução dos testes.
+- O projeto possui atualmente **190 testes**, todos passando (`BUILD SUCCESS`).
+- O plugin **JaCoCo** gera relatório de cobertura em `target/site/jacoco/index.html` após a execução dos testes — cobertura de linha atual: **~96%**.
 
 ## Documentação interativa (Swagger)
 

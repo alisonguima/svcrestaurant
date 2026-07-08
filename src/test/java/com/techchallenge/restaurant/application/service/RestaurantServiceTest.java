@@ -3,6 +3,7 @@ package com.techchallenge.restaurant.application.service;
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import com.techchallenge.restaurant.application.domain.user.User;
+import com.techchallenge.restaurant.application.exception.RestaurantAlreadyExistsException;
 import com.techchallenge.restaurant.application.exception.RestaurantNotFoundException;
 import com.techchallenge.restaurant.application.exception.RestaurantOwnerNotFoundException;
 import com.techchallenge.restaurant.application.exception.RestaurantOwnerUnauthorizedException;
@@ -78,27 +79,18 @@ class RestaurantServiceTest {
     doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; }).when(transactionPort).executeVoid(any());
   }
 
-  private static final UserType DONO_USER_TYPE =
-      UserType.builder().id(1L).name(UserType.DONO).build();
+  private static final UserType DONO_USER_TYPE = new UserType(1L, UserType.DONO);
 
   private User createOwner(Long id) {
-    return User.builder().id(id).name("Chef Owner").userType(DONO_USER_TYPE).build();
+    return new User(id, "Chef Owner", null, null, null, DONO_USER_TYPE, null);
   }
 
   private User createOwnerWithType(Long id, UserType userType) {
-    return User.builder().id(id).name("Chef Owner").userType(userType).build();
+    return new User(id, "Chef Owner", null, null, null, userType, null);
   }
 
   private Restaurant createTestRestaurant(Long id, String name, User owner) {
-    return Restaurant.builder()
-        .id(id)
-        .name(name)
-        .address("Rua A, 123")
-        .cuisineType("Brasileira")
-        .openingHours("10:00-22:00")
-        .owner(owner)
-        .lastUpdateAt(NOW)
-        .build();
+    return new Restaurant(id, name, "Rua A, 123", "Brasileira", "10:00-22:00", owner, NOW);
   }
 
   @Test
@@ -109,13 +101,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.save(any(Restaurant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    Restaurant result = createRestaurantUseCase.execute(Restaurant.builder()
-        .name("Casa do Chef")
-        .address("Rua A, 123")
-        .cuisineType("Brasileira")
-        .openingHours("10:00-22:00")
-        .owner(User.builder().id(10L).build())
-        .build());
+    Restaurant result = createRestaurantUseCase.execute(new Restaurant(null, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", new User(10L, null, null, null, null, null, null), null));
 
     assertEquals("Casa do Chef", result.getName());
     assertEquals(NOW, result.getLastUpdateAt());
@@ -126,18 +112,12 @@ class RestaurantServiceTest {
 
   @Test
   void shouldThrowExceptionWhenOwnerIsClientType() {
-    UserType clientType = UserType.builder().id(2L).name(UserType.CLIENTE).build();
+    UserType clientType = new UserType(2L, UserType.CLIENTE);
     User clientOwner = createOwnerWithType(10L, clientType);
     when(userPersistencePort.findById(10L)).thenReturn(Optional.of(clientOwner));
 
     assertThrows(RestaurantOwnerUnauthorizedException.class,
-        () -> createRestaurantUseCase.execute(Restaurant.builder()
-            .name("Casa do Chef")
-            .address("Rua A, 123")
-            .cuisineType("Brasileira")
-            .openingHours("10:00-22:00")
-            .owner(User.builder().id(10L).build())
-            .build()));
+        () -> createRestaurantUseCase.execute(new Restaurant(null, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", new User(10L, null, null, null, null, null, null), null)));
   }
 
   @Test
@@ -146,13 +126,15 @@ class RestaurantServiceTest {
     when(userPersistencePort.findById(10L)).thenReturn(Optional.of(ownerWithoutType));
 
     assertThrows(RestaurantOwnerUnauthorizedException.class,
-        () -> createRestaurantUseCase.execute(Restaurant.builder()
-            .name("Casa do Chef")
-            .address("Rua A, 123")
-            .cuisineType("Brasileira")
-            .openingHours("10:00-22:00")
-            .owner(User.builder().id(10L).build())
-            .build()));
+        () -> createRestaurantUseCase.execute(new Restaurant(null, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", new User(10L, null, null, null, null, null, null), null)));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenCreatingRestaurantThatAlreadyExists() {
+    when(restaurantPersistencePort.existsByNameIgnoreCase("Casa do Chef")).thenReturn(true);
+
+    assertThrows(RestaurantAlreadyExistsException.class,
+        () -> createRestaurantUseCase.execute(new Restaurant(null, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", new User(10L, null, null, null, null, null, null), null)));
   }
 
   @Test
@@ -160,25 +142,14 @@ class RestaurantServiceTest {
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
     assertThrows(RestaurantOwnerNotFoundException.class,
-        () -> createRestaurantUseCase.execute(Restaurant.builder()
-            .name("Casa do Chef")
-            .address("Rua A, 123")
-            .cuisineType("Brasileira")
-            .openingHours("10:00-22:00")
-            .owner(User.builder().id(999L).build())
-            .build()));
+        () -> createRestaurantUseCase.execute(new Restaurant(null, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", new User(999L, null, null, null, null, null, null), null)));
   }
 
   @Test
   void shouldUpdateRestaurantSuccessfully() {
     User owner = createOwner(10L);
     Restaurant existingRestaurant = createTestRestaurant(1L, "Casa do Chef", owner);
-    Restaurant updateData = Restaurant.builder()
-        .name("Casa do Chef - Novo")
-        .address("Rua B, 456")
-        .cuisineType("Italiana")
-        .openingHours("11:00-23:00")
-        .build();
+    Restaurant updateData = new Restaurant(null, "Casa do Chef - Novo", "Rua B, 456", "Italiana", "11:00-23:00", null, null);
 
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(existingRestaurant));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -199,9 +170,7 @@ class RestaurantServiceTest {
   void shouldUpdateRestaurantWithPartialData() {
     User owner = createOwner(10L);
     Restaurant existingRestaurant = createTestRestaurant(1L, "Casa do Chef", owner);
-    Restaurant updateData = Restaurant.builder()
-        .name("Casa do Chef - Novo")
-        .build();
+    Restaurant updateData = new Restaurant(null, "Casa do Chef - Novo", null, null, null, null, null);
 
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(existingRestaurant));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -221,11 +190,9 @@ class RestaurantServiceTest {
   @Test
   void shouldUpdateRestaurantWithNewOwner() {
     User oldOwner = createOwner(10L);
-    User newOwner = User.builder().id(20L).name("New Owner").build();
+    User newOwner = new User(20L, "New Owner", null, null, null, null, null);
     Restaurant existingRestaurant = createTestRestaurant(1L, "Casa do Chef", oldOwner);
-    Restaurant updateData = Restaurant.builder()
-        .owner(User.builder().id(20L).build())
-        .build();
+    Restaurant updateData = new Restaurant(null, null, null, null, null, new User(20L, null, null, null, null, null, null), null);
 
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(existingRestaurant));
     when(userPersistencePort.findById(20L)).thenReturn(Optional.of(newOwner));
@@ -245,9 +212,7 @@ class RestaurantServiceTest {
   void shouldThrowExceptionWhenUpdatingRestaurantWithNonExistentOwner() {
     User owner = createOwner(10L);
     Restaurant existingRestaurant = createTestRestaurant(1L, "Casa do Chef", owner);
-    Restaurant updateData = Restaurant.builder()
-        .owner(User.builder().id(999L).build())
-        .build();
+    Restaurant updateData = new Restaurant(null, null, null, null, null, new User(999L, null, null, null, null, null, null), null);
 
     when(restaurantPersistencePort.findById(1L)).thenReturn(Optional.of(existingRestaurant));
     when(userPersistencePort.findById(999L)).thenReturn(Optional.empty());
@@ -261,9 +226,7 @@ class RestaurantServiceTest {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
     assertThrows(RestaurantNotFoundException.class,
-        () -> updateRestaurantUseCase.execute(999L, Restaurant.builder()
-            .name("Casa do Chef")
-            .build()));
+        () -> updateRestaurantUseCase.execute(999L, new Restaurant(null, "Casa do Chef", null, null, null, null, null)));
   }
 
   @Test

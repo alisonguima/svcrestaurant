@@ -33,7 +33,7 @@ class UserTypePostgresTest {
   void save_shouldMapToEntitySaveAndReturnDomain() {
     when(userTypeRepository.save(any())).thenReturn(entity(1L, UserType.CLIENTE));
 
-    UserType result = userTypePostgres.save(UserType.builder().name(UserType.CLIENTE).build());
+    UserType result = userTypePostgres.save(new UserType(null, UserType.CLIENTE));
 
     assertEquals(1L, result.getId());
     assertEquals(UserType.CLIENTE, result.getName());

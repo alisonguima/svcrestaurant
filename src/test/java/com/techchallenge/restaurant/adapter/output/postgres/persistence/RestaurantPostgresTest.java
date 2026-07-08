@@ -45,16 +45,9 @@ class RestaurantPostgresTest {
   }
 
   private Restaurant restaurantDomain() {
-    UserType userType = UserType.builder().id(1L).name(UserType.DONO).build();
-    User owner = User.builder()
-        .id(10L).name("Owner").email("owner@test.com").login("owner")
-        .password("raw").userType(userType).lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
-    return Restaurant.builder()
-        .name("Restaurante A").address("Rua A, 123")
-        .cuisineType("Brasileira").openingHours("10:00-22:00")
-        .owner(owner).lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
+    UserType userType = new UserType(1L, UserType.DONO);
+    User owner = new User(10L, "Owner", "owner@test.com", "owner", "raw", userType, ZonedDateTime.now(UTC));
+    return new Restaurant(null, "Restaurante A", "Rua A, 123", "Brasileira", "10:00-22:00", owner, ZonedDateTime.now(UTC));
   }
 
   @Test

@@ -56,15 +56,8 @@ class UserControllerTest {
   private DeleteUserPort deleteUserUseCase;
 
   private User userDomain() {
-    return User.builder()
-        .id(1L)
-        .name("João Silva")
-        .email("joao@test.com")
-        .login("joao")
-        .password("$2a$10$hashed")
-        .userType(UserType.builder().id(2L).name(UserType.CLIENTE).build())
-        .lastUpdateAt(ZonedDateTime.parse("2026-07-03T12:00:00Z"))
-        .build();
+    return new User(1L, "João Silva", "joao@test.com", "joao", "$2a$10$hashed",
+        new UserType(2L, UserType.CLIENTE), ZonedDateTime.parse("2026-07-03T12:00:00Z"));
   }
 
   @Test

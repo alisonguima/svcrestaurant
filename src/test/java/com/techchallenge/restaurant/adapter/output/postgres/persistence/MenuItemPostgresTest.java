@@ -54,22 +54,11 @@ class MenuItemPostgresTest {
   }
 
   private MenuItem menuItemDomain() {
-    UserType userType = UserType.builder().id(1L).name(UserType.DONO).build();
-    User owner = User.builder()
-        .id(10L).name("Owner").email("owner@test.com").login("owner")
-        .password("raw").userType(userType).lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
-    Restaurant restaurant = Restaurant.builder()
-        .id(1L).name("Restaurante A").address("Rua A, 123")
-        .cuisineType("Brasileira").openingHours("10:00-22:00")
-        .owner(owner).lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
-    return MenuItem.builder()
-        .name("Picanha").description("Picanha na brasa")
-        .price(BigDecimal.valueOf(89.9)).onlyAtRestaurant(true)
-        .photoPath("/photos/picanha.jpg").restaurant(restaurant)
-        .lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
+    UserType userType = new UserType(1L, UserType.DONO);
+    User owner = new User(10L, "Owner", "owner@test.com", "owner", "raw", userType, ZonedDateTime.now(UTC));
+    Restaurant restaurant = new Restaurant(1L, "Restaurante A", "Rua A, 123", "Brasileira", "10:00-22:00", owner, ZonedDateTime.now(UTC));
+    return new MenuItem(null, "Picanha", "Picanha na brasa", BigDecimal.valueOf(89.9), true,
+        "/photos/picanha.jpg", restaurant, ZonedDateTime.now(UTC));
   }
 
   @Test

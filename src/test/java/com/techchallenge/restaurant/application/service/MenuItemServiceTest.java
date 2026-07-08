@@ -3,6 +3,7 @@ package com.techchallenge.restaurant.application.service;
 import com.techchallenge.restaurant.application.domain.menu.MenuItem;
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import com.techchallenge.restaurant.application.domain.user.User;
+import com.techchallenge.restaurant.application.exception.MenuItemAlreadyExistsException;
 import com.techchallenge.restaurant.application.exception.MenuItemNotFoundException;
 import com.techchallenge.restaurant.application.exception.MenuItemOwnerUnauthorizedException;
 import com.techchallenge.restaurant.application.exception.MenuItemRestaurantNotFoundException;
@@ -64,7 +65,7 @@ class MenuItemServiceTest {
 
   private static final ZonedDateTime NOW = ZonedDateTime.parse("2026-07-03T15:00:00Z");
   private static final Long OWNER_ID = 1L;
-  private static final User OWNER = User.builder().id(OWNER_ID).name("Owner").build();
+  private static final User OWNER = new User(OWNER_ID, "Owner", null, null, null, null, null);
 
   @BeforeEach
   void setUp() {
@@ -83,28 +84,12 @@ class MenuItemServiceTest {
   }
 
   private Restaurant createTestRestaurant(Long id) {
-    return Restaurant.builder()
-        .id(id)
-        .name("Casa do Chef")
-        .address("Rua A, 123")
-        .cuisineType("Brasileira")
-        .openingHours("10:00-22:00")
-        .owner(OWNER)
-        .lastUpdateAt(NOW)
-        .build();
+    return new Restaurant(id, "Casa do Chef", "Rua A, 123", "Brasileira", "10:00-22:00", OWNER, NOW);
   }
 
   private MenuItem createTestMenuItem(Long id, Long restaurantId, String name) {
-    return MenuItem.builder()
-        .id(id)
-        .name(name)
-        .description("Descrição do prato")
-        .price(BigDecimal.valueOf(79.9))
-        .onlyAtRestaurant(true)
-        .photoPath("/tmp/prato.jpg")
-        .restaurant(createTestRestaurant(restaurantId))
-        .lastUpdateAt(NOW)
-        .build();
+    return new MenuItem(id, name, "Descrição do prato", BigDecimal.valueOf(79.9), true,
+        "/tmp/prato.jpg", createTestRestaurant(restaurantId), NOW);
   }
 
   @Test
@@ -113,13 +98,8 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
     when(menuItemPersistencePort.save(any(MenuItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-    MenuItem result = createMenuItemUseCase.execute(5L, OWNER_ID, MenuItem.builder()
-        .name("Picanha")
-        .description("Picanha na brasa")
-        .price(BigDecimal.valueOf(79.9))
-        .onlyAtRestaurant(true)
-        .photoPath("/tmp/picanha.jpg")
-        .build());
+    MenuItem result = createMenuItemUseCase.execute(5L, OWNER_ID, new MenuItem(null, "Picanha",
+        "Picanha na brasa", BigDecimal.valueOf(79.9), true, "/tmp/picanha.jpg", null, null));
 
     assertEquals(5L, result.getRestaurant().getId());
     assertEquals(NOW, result.getLastUpdateAt());
@@ -134,11 +114,8 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(999L)).thenReturn(Optional.empty());
 
     assertThrows(MenuItemRestaurantNotFoundException.class,
-        () -> createMenuItemUseCase.execute(999L, OWNER_ID, MenuItem.builder()
-            .name("Picanha")
-            .description("Picanha na brasa")
-            .price(BigDecimal.valueOf(79.9))
-            .build()));
+        () -> createMenuItemUseCase.execute(999L, OWNER_ID, new MenuItem(null, "Picanha",
+            "Picanha na brasa", BigDecimal.valueOf(79.9), null, null, null, null)));
   }
 
   @Test
@@ -146,23 +123,25 @@ class MenuItemServiceTest {
     when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
 
     assertThrows(MenuItemOwnerUnauthorizedException.class,
-        () -> createMenuItemUseCase.execute(5L, 999L, MenuItem.builder()
-            .name("Picanha")
-            .description("Picanha na brasa")
-            .price(BigDecimal.valueOf(79.9))
-            .build()));
+        () -> createMenuItemUseCase.execute(5L, 999L, new MenuItem(null, "Picanha",
+            "Picanha na brasa", BigDecimal.valueOf(79.9), null, null, null, null)));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenCreatingMenuItemThatAlreadyExists() {
+    when(restaurantPersistencePort.findById(5L)).thenReturn(Optional.of(createTestRestaurant(5L)));
+    when(menuItemPersistencePort.existsByNameIgnoreCaseAndRestaurantId("Picanha", 5L)).thenReturn(true);
+
+    assertThrows(MenuItemAlreadyExistsException.class,
+        () -> createMenuItemUseCase.execute(5L, OWNER_ID, new MenuItem(null, "Picanha",
+            "Picanha na brasa", BigDecimal.valueOf(79.9), null, null, null, null)));
   }
 
   @Test
   void shouldUpdateMenuItemSuccessfully() {
     MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
-    MenuItem updateData = MenuItem.builder()
-        .name("Picanha Premium")
-        .description("Picanha premium na brasa")
-        .price(BigDecimal.valueOf(99.9))
-        .onlyAtRestaurant(false)
-        .photoPath("/tmp/picanha_premium.jpg")
-        .build();
+    MenuItem updateData = new MenuItem(null, "Picanha Premium", "Picanha premium na brasa",
+        BigDecimal.valueOf(99.9), false, "/tmp/picanha_premium.jpg", null, null);
 
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(existingMenuItem));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -182,9 +161,7 @@ class MenuItemServiceTest {
   @Test
   void shouldUpdateMenuItemWithPartialData() {
     MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
-    MenuItem updateData = MenuItem.builder()
-        .name("Picanha Atualizada")
-        .build();
+    MenuItem updateData = new MenuItem(null, "Picanha Atualizada", null, null, null, null, null, null);
 
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(existingMenuItem));
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
@@ -202,13 +179,35 @@ class MenuItemServiceTest {
   }
 
   @Test
+  void shouldThrowExceptionWhenUpdatingNonExistentMenuItem() {
+    when(menuItemPersistencePort.findById(999L)).thenReturn(Optional.empty());
+
+    MenuItemNotFoundException ex = assertThrows(MenuItemNotFoundException.class,
+        () -> updateMenuItemUseCase.execute(5L, 999L, OWNER_ID,
+            new MenuItem(null, "x", null, null, null, null, null, null)));
+
+    assertTrue(ex.getMessage().contains("999"));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenUpdatingMenuItemWithWrongRestaurant() {
+    MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
+
+    when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(existingMenuItem));
+
+    assertThrows(MenuItemRestaurantNotFoundException.class,
+        () -> updateMenuItemUseCase.execute(10L, 1L, OWNER_ID,
+            new MenuItem(null, "x", null, null, null, null, null, null)));
+  }
+
+  @Test
   void shouldThrowExceptionWhenUpdatingMenuItemByUnauthorizedOwner() {
     MenuItem existingMenuItem = createTestMenuItem(1L, 5L, "Picanha");
 
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(existingMenuItem));
 
     assertThrows(MenuItemOwnerUnauthorizedException.class,
-        () -> updateMenuItemUseCase.execute(5L, 1L, 999L, MenuItem.builder().name("x").build()));
+        () -> updateMenuItemUseCase.execute(5L, 1L, 999L, new MenuItem(null, "x", null, null, null, null, null, null)));
   }
 
   @Test
@@ -246,11 +245,7 @@ class MenuItemServiceTest {
 
   @Test
   void shouldThrowExceptionWhenGettingMenuItemWithNullRestaurant() {
-    MenuItem menuItem = MenuItem.builder()
-        .id(1L)
-        .name("Picanha")
-        .restaurant(null)
-        .build();
+    MenuItem menuItem = new MenuItem(1L, "Picanha", null, null, null, null, null, null);
     when(menuItemPersistencePort.findById(1L)).thenReturn(Optional.of(menuItem));
 
     assertThrows(MenuItemRestaurantNotFoundException.class,

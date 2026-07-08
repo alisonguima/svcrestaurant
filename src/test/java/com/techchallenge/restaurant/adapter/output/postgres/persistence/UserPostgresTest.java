@@ -45,14 +45,8 @@ class UserPostgresTest {
   }
 
   private User userDomain() {
-    return User.builder()
-        .name("João Silva")
-        .email("joao@test.com")
-        .login("joao")
-        .password("rawPassword")
-        .userType(UserType.builder().id(1L).name(UserType.CLIENTE).build())
-        .lastUpdateAt(ZonedDateTime.now(UTC))
-        .build();
+    return new User(null, "João Silva", "joao@test.com", "joao", "rawPassword",
+        new UserType(1L, UserType.CLIENTE), ZonedDateTime.now(UTC));
   }
 
   @Test
