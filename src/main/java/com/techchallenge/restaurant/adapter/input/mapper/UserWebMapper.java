@@ -38,8 +38,6 @@ public interface UserWebMapper {
       return null;
     }
 
-    return UserType.builder()
-        .id(userTypeId)
-        .build();
+    return new UserType(userTypeId, null);
   }
 }

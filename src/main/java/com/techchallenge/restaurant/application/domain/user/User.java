@@ -2,18 +2,14 @@ package com.techchallenge.restaurant.application.domain.user;
 
 import com.techchallenge.restaurant.application.domain.usertype.UserType;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.ZonedDateTime;
 
 @ToString
 @Getter
-@Builder
 @AllArgsConstructor
-@NoArgsConstructor
 public class User {
 
   private Long id;

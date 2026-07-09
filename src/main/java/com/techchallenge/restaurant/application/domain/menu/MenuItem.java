@@ -2,9 +2,7 @@ package com.techchallenge.restaurant.application.domain.menu;
 
 import com.techchallenge.restaurant.application.domain.restaurant.Restaurant;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
@@ -12,8 +10,6 @@ import java.time.ZonedDateTime;
 
 @ToString
 @Getter
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
 public class MenuItem {
 

@@ -2,17 +2,13 @@ package com.techchallenge.restaurant.application.domain.restaurant;
 
 import com.techchallenge.restaurant.application.domain.user.User;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.ZonedDateTime;
 
 @ToString
 @Getter
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
 public class Restaurant {
 
