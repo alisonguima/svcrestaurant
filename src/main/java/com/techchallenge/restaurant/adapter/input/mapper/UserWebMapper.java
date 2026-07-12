@@ -18,7 +18,7 @@ public interface UserWebMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "lastUpdateAt", ignore = true)
-  @Mapping(target = "userType", source = "userTypeId")
+  @Mapping(target = "userType", ignore = true)
   User createUserRequestToDomain(CreateUserRequest createUserRequest);
 
   @Mapping(target = "id", ignore = true)

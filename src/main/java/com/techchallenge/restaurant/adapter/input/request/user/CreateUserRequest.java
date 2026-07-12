@@ -10,12 +10,13 @@ import jakarta.validation.constraints.Size;
 /**
  * Dados necessários para o cadastro de um novo usuário.
  * {@code login} e {@code email} devem ser únicos no sistema.
+ * O tipo de usuário não é definido na criação; deve ser associado
+ * posteriormente via o endpoint de atribuição de tipo de usuário.
  *
- * @param name       nome completo do usuário
- * @param email      e-mail único do usuário
- * @param login      login único usado para autenticação
- * @param password   senha em texto plano, armazenada com hash BCrypt
- * @param userTypeId id do tipo de usuário a ser associado (opcional)
+ * @param name     nome completo do usuário
+ * @param email    e-mail único do usuário
+ * @param login    login único usado para autenticação
+ * @param password senha em texto plano, armazenada com hash BCrypt
  */
 public record CreateUserRequest(
     @Schema(description = "Nome completo do usuário", example = "João da Silva")
@@ -38,7 +39,4 @@ public record CreateUserRequest(
     @Pattern(
         regexp = InputValidationConstants.PASSWORD_PATTERN,
         message = InputValidationConstants.PASSWORD_INVALID)
-    String password,
-
-    @Schema(description = "Id do tipo de usuário a ser associado")
-    Long userTypeId) {}
+    String password) {}

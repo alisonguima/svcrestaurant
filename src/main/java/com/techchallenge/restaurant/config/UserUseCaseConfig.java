@@ -25,8 +25,8 @@ public class UserUseCaseConfig {
 
   @Bean
   public CreateUserPort createUserPort(UserPersistencePort u, PasswordEncryptionPort p,
-      DateTimeProviderPort dt, UserTypePersistencePort ut, TransactionPort tx) {
-    return new CreateUserUseCase(u, p, dt, ut, tx);
+      DateTimeProviderPort dt, TransactionPort tx) {
+    return new CreateUserUseCase(u, p, dt, tx);
   }
 
   @Bean

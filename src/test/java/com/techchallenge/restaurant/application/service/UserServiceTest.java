@@ -71,7 +71,7 @@ class UserServiceTest {
   @BeforeEach
   void setUp() {
     createUserUseCase = new CreateUserUseCase(userPersistencePort, passwordEncryptionPort,
-        dateTimeProviderPort, userTypePersistencePort, transactionPort);
+        dateTimeProviderPort, transactionPort);
     updateUserUseCase = new UpdateUserUseCase(userPersistencePort, dateTimeProviderPort,
         userTypePersistencePort, transactionPort);
     updateUserPasswordUseCase = new UpdateUserPasswordUseCase(userPersistencePort,
@@ -96,15 +96,13 @@ class UserServiceTest {
 
   @Test
   void shouldCreateUserSuccessfully() {
-    UserType userType = createUserType(1L, UserType.CLIENTE);
-    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
+    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", null, null);
 
     when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(false);
-    when(userTypePersistencePort.findById(1L)).thenReturn(Optional.of(userType));
     when(passwordEncryptionPort.encode("Senha@123")).thenReturn("encodedPassword");
     when(dateTimeProviderPort.nowUtc()).thenReturn(NOW);
-    User savedUser = createTestUser(1L, "João Silva", "joao@email.com", "joao.silva", userType);
+    User savedUser = createTestUser(1L, "João Silva", "joao@email.com", "joao.silva", null);
     when(userPersistencePort.save(any(User.class))).thenReturn(savedUser);
 
     User result = createUserUseCase.execute(user);
@@ -117,7 +115,6 @@ class UserServiceTest {
     assertEquals(NOW, result.getLastUpdateAt());
     verify(userPersistencePort).existsByEmail("joao@email.com");
     verify(userPersistencePort).existsByLogin("joao.silva");
-    verify(userTypePersistencePort).findById(1L);
     verify(passwordEncryptionPort).encode("Senha@123");
     verify(userPersistencePort).save(any(User.class));
   }
@@ -142,19 +139,6 @@ class UserServiceTest {
     when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(true);
 
     assertThrows(LoginAlreadyExistsException.class,
-        () -> createUserUseCase.execute(user));
-  }
-
-  @Test
-  void shouldThrowExceptionWhenCreatingUserWithNonExistentUserType() {
-    UserType userType = createUserType(999L, UserType.CLIENTE);
-    User user = new User(null, "João Silva", "joao@email.com", "joao.silva", "Senha@123", userType, null);
-
-    when(userPersistencePort.existsByEmail("joao@email.com")).thenReturn(false);
-    when(userPersistencePort.existsByLogin("joao.silva")).thenReturn(false);
-    when(userTypePersistencePort.findById(999L)).thenReturn(Optional.empty());
-
-    assertThrows(UserTypeNotFoundException.class,
         () -> createUserUseCase.execute(user));
   }
 

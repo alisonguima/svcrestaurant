@@ -71,8 +71,7 @@ class UserControllerTest {
                   "name": "João Silva",
                   "email": "joao@test.com",
                   "login": "joao",
-                  "password": "Password1!",
-                  "userTypeId": 2
+                  "password": "Password1!"
                 }
                 """))
         .andExpect(status().isCreated())

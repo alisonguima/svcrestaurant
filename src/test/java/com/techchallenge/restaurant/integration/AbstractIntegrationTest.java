@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
@@ -37,12 +38,14 @@ abstract class AbstractIntegrationTest {
   }
 
   protected Long createUser(String name, String email, String login, Long userTypeId) throws Exception {
-    return extractId(mockMvc.perform(post("/api/v1/user")
+    Long userId = extractId(mockMvc.perform(post("/api/v1/user")
             .contentType(APPLICATION_JSON)
             .content("""
-                {"name":"%s","email":"%s","login":"%s","password":"Senha@123","userTypeId":%d}
-                """.formatted(name, email, login, userTypeId)))
+                {"name":"%s","email":"%s","login":"%s","password":"Senha@123"}
+                """.formatted(name, email, login)))
         .andReturn());
+    mockMvc.perform(patch("/api/v1/user/{id}/user-type/{userTypeId}", userId, userTypeId));
+    return userId;
   }
 
   protected Long createRestaurant(String name, Long ownerUserId) throws Exception {

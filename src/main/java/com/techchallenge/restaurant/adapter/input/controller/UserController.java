@@ -49,7 +49,6 @@ public class UserController {
   @ApiResponses({
       @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
       @ApiResponse(responseCode = "400", description = "Dados de requisição inválidos"),
-      @ApiResponse(responseCode = "404", description = "Tipo de usuário informado não encontrado"),
       @ApiResponse(responseCode = "422", description = "E-mail ou login já cadastrado")
   })
   @PostMapping

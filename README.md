@@ -126,7 +126,7 @@ Prefixo base: `/api/v1` (mais o `context-path` configurado — ver [Configuraç�
 
 | Método | Caminho                              | Descrição                                  | Corpo da requisição                                          |
 |--------|---------------------------------------|---------------------------------------------|---------------------------------------------------------------|
-| POST   | `/api/v1/user`                        | Cria um novo usuário                        | `name, email, login, password, userTypeId`                    |
+| POST   | `/api/v1/user`                        | Cria um novo usuário                        | `name, email, login, password`                                 |
 | GET    | `/api/v1/user/{id}`                   | Busca usuário por id                        | —                                                               |
 | PATCH  | `/api/v1/user/{id}`                   | Atualiza dados cadastrais                   | `name?, email?, login?, userTypeId?`                           |
 | PATCH  | `/api/v1/user/{id}/password`          | Altera a senha (valida a senha atual)       | `currentPassword, newPassword`                                 |
