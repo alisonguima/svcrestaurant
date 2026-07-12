@@ -49,9 +49,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+              "raw": "{{localhost80}}/restaurant/api/v1/user-types",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -78,9 +78,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user-types/{{userTypeId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/user-types/{{userTypeId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -108,15 +108,54 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user-types",
+              "raw": "{{localhost80}}/restaurant/api/v1/user-types",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
                 "api",
                 "v1",
                 "user-types"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(4) UpdateUserType",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dono\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{localhost80}}/restaurant/api/v1/user-types/{{userTypeId}}",
+              "host": [
+                "{{localhost80}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user-types",
+                "{{userTypeId}}"
               ]
             }
           },
@@ -159,7 +198,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Alison Guimaraes\",\n  \"email\": \"alisonguimaraes@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+              "raw": "{\n  \"name\": \"Alison Guimaraes\",\n  \"email\": \"alisonguimaraes@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -167,9 +206,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user",
+              "raw": "{{localhost80}}/restaurant/api/v1/user",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -196,9 +235,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -235,9 +274,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/password",
+              "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}/password",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -275,9 +314,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -299,9 +338,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/user-type/{{userTypeId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}/user-type/{{userTypeId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -311,30 +350,6 @@
                 "{{userId}}",
                 "user-type",
                 "{{userTypeId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "(6) DeleteUser",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}",
-              "host": [
-                "{{localhost90}}"
-              ],
-              "path": [
-                "restaurant",
-                "api",
-                "v1",
-                "user",
-                "{{userId}}"
               ]
             }
           },
@@ -384,9 +399,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -413,9 +428,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -443,9 +458,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -481,33 +496,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}",
               "host": [
-                "{{localhost90}}"
-              ],
-              "path": [
-                "restaurant",
-                "api",
-                "v1",
-                "restaurants",
-                "{{restaurantId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "(5) DeleteRestaurant",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}",
-              "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -564,9 +555,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -595,9 +586,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -627,9 +618,9 @@
               }
             ],
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -667,9 +658,9 @@
               }
             },
             "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}",
               "host": [
-                "{{localhost90}}"
+                "{{localhost80}}"
               ],
               "path": [
                 "restaurant",
@@ -679,38 +670,6 @@
                 "{{restaurantId}}",
                 "menu-items",
                 "{{menuItemId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "(5) DeleteMenuItem",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId={{userId}}",
-              "host": [
-                "{{localhost90}}"
-              ],
-              "path": [
-                "restaurant",
-                "api",
-                "v1",
-                "restaurants",
-                "{{restaurantId}}",
-                "menu-items",
-                "{{menuItemId}}"
-              ],
-              "query": [
-                {
-                  "key": "ownerId",
-                  "value": "{{userId}}"
-                }
               ]
             }
           },
@@ -749,8 +708,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user-types"]
                 }
               },
@@ -777,13 +736,27 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Maria Cliente\",\n  \"email\": \"maria.cliente@gmail.com\",\n  \"login\": \"mariacliente\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{clienteUserTypeId}}\n}",
+                  "raw": "{\n  \"name\": \"Maria Cliente\",\n  \"email\": \"maria.cliente@gmail.com\",\n  \"login\": \"mariacliente\",\n  \"password\": \"R3st@urant\"\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "(S3) AssignUserType - Cliente",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{localhost80}}/restaurant/api/v1/user/{{clienteUserId}}/user-type/{{clienteUserTypeId}}",
+                  "host": ["{{localhost80}}"],
+                  "path": ["restaurant", "api", "v1", "user", "{{clienteUserId}}", "user-type", "{{clienteUserTypeId}}"]
                 }
               },
               "response": []
@@ -794,7 +767,7 @@
           "name": "UserType",
           "item": [
             {
-              "name": "CreateUserType - nome inválido (422)",
+              "name": "CreateUserType - nome inválido (400)",
               "request": {
                 "auth": { "type": "noauth" },
                 "method": "POST",
@@ -805,8 +778,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user-types"]
                 }
               },
@@ -824,8 +797,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user-types",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user-types",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user-types"]
                 }
               },
@@ -838,8 +811,8 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user-types/99999",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user-types/99999",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user-types", "99999"]
                 }
               },
@@ -852,8 +825,8 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user-types/{{userTypeId}}",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user-types/{{userTypeId}}",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user-types", "{{userTypeId}}"]
                 }
               },
@@ -872,12 +845,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Teste\",\n  \"email\": \"teste@gmail.com\",\n  \"login\": \"testelogin\",\n  \"password\": \"fraca\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "raw": "{\n  \"name\": \"Teste\",\n  \"email\": \"teste@gmail.com\",\n  \"login\": \"testelogin\",\n  \"password\": \"fraca\"\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user"]
                 }
               },
@@ -891,12 +864,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"outro@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"outro@gmail.com\",\n  \"login\": \"alisonguimaraes\",\n  \"password\": \"R3st@urant\"\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user"]
                 }
               },
@@ -910,12 +883,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"alisonguimaraes@hotmail.com\",\n  \"login\": \"outrologin\",\n  \"password\": \"R3st@urant\",\n  \"userTypeId\": {{userTypeId}}\n}",
+                  "raw": "{\n  \"name\": \"Outro Nome\",\n  \"email\": \"alisonguimaraes@hotmail.com\",\n  \"login\": \"outrologin\",\n  \"password\": \"R3st@urant\"\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user"]
                 }
               },
@@ -933,8 +906,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user/{{userId}}/password",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}/password",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user", "{{userId}}", "password"]
                 }
               },
@@ -947,8 +920,8 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/user/99999",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/user/99999",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "user", "99999"]
                 }
               },
@@ -971,8 +944,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants"]
                 }
               },
@@ -990,8 +963,8 @@
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants"]
                 }
               },
@@ -1005,12 +978,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Casa do Chef\",\n  \"address\": \"Rua D, 200\",\n  \"cuisineType\": \"Brasileira\",\n  \"openingHours\": \"10:00-22:00\",\n  \"ownerUserId\": {{userId}}\n}",
+                  "raw": "{\n  \"name\": \"Casa do Chef Atualizada\",\n  \"address\": \"Rua D, 200\",\n  \"cuisineType\": \"Brasileira\",\n  \"openingHours\": \"10:00-22:00\",\n  \"ownerUserId\": {{userId}}\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants"]
                 }
               },
@@ -1023,8 +996,8 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/99999",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/99999",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "99999"]
                 }
               },
@@ -1043,12 +1016,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Item Grátis\",\n  \"description\": \"Preço abaixo do mínimo\",\n  \"price\": 0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": {{userId}}\n}",
+                  "raw": "{\n  \"name\": \"Item Grátis\",\n  \"description\": \"Preço abaixo do mínimo\",\n  \"price\": 0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": \"/tmp/item-gratis.jpg\",\n  \"ownerId\": {{userId}}\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items"]
                 }
               },
@@ -1062,12 +1035,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Prato Perdido\",\n  \"description\": \"Restaurante inexistente\",\n  \"price\": 20.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": {{userId}}\n}",
+                  "raw": "{\n  \"name\": \"Prato Perdido\",\n  \"description\": \"Restaurante inexistente\",\n  \"price\": 20.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": \"/tmp/prato-perdido.jpg\",\n  \"ownerId\": {{userId}}\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/99999/menu-items",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/99999/menu-items",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "99999", "menu-items"]
                 }
               },
@@ -1081,12 +1054,12 @@
                 "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Prato Não Autorizado\",\n  \"description\": \"ownerId não corresponde ao dono do restaurante\",\n  \"price\": 30.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": null,\n  \"ownerId\": 99999\n}",
+                  "raw": "{\n  \"name\": \"Prato Não Autorizado\",\n  \"description\": \"ownerId não corresponde ao dono do restaurante\",\n  \"price\": 30.0,\n  \"onlyAtRestaurant\": false,\n  \"photoPath\": \"/tmp/prato-nao-autorizado.jpg\",\n  \"ownerId\": 99999\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items"]
                 }
               },
@@ -1099,8 +1072,8 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/99999",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/99999",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items", "99999"]
                 }
               },
@@ -1113,8 +1086,8 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{localhost90}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId=99999",
-                  "host": ["{{localhost90}}"],
+                  "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId=99999",
+                  "host": ["{{localhost80}}"],
                   "path": ["restaurant", "api", "v1", "restaurants", "{{restaurantId}}", "menu-items", "{{menuItemId}}"],
                   "query": [{ "key": "ownerId", "value": "99999" }]
                 }
@@ -1122,6 +1095,115 @@
               "response": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "6. Cleanup",
+      "item": [
+        {
+          "name": "(1) DeleteMenuItem",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}/menu-items/{{menuItemId}}?ownerId={{userId}}",
+              "host": [
+                "{{localhost80}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}",
+                "menu-items",
+                "{{menuItemId}}"
+              ],
+              "query": [
+                {
+                  "key": "ownerId",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(2) DeleteRestaurant",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost80}}/restaurant/api/v1/restaurants/{{restaurantId}}",
+              "host": [
+                "{{localhost80}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "restaurants",
+                "{{restaurantId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(3) DeleteUser",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost80}}/restaurant/api/v1/user/{{userId}}",
+              "host": [
+                "{{localhost80}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "(4) DeleteUserType",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost80}}/restaurant/api/v1/user-types/{{userTypeId}}",
+              "host": [
+                "{{localhost80}}"
+              ],
+              "path": [
+                "restaurant",
+                "api",
+                "v1",
+                "user-types",
+                "{{userTypeId}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     }
